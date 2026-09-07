@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>贪吃蛇 · 科技版 + 智能AI</title>
+    <title>贪吃蛇 · 科技版 + 智能AI（激进吃食物版）</title>
     <style>
-        /* ========== 全局重置 & 字体 ========== */
         * {
             margin: 0;
             padding: 0;
@@ -238,7 +237,6 @@
 <body>
 
     <div class="game-container">
-        <!-- 顶部 -->
         <div class="header">
             <div class="title">
                 <span class="title-icon">◈</span>
@@ -250,12 +248,10 @@
             </div>
         </div>
 
-        <!-- 画布 -->
         <div class="canvas-wrapper">
             <canvas id="gameCanvas" width="500" height="500"></canvas>
         </div>
 
-        <!-- 底部按钮 -->
         <div class="footer">
             <button id="restartBtn" class="btn">⟳ 重新开始</button>
             <button id="aiBtn" class="btn">🤖 AI自动玩</button>
@@ -264,18 +260,18 @@
 
     <script>
         // ================================================================
-        //  AIController 类 —— BFS + 安全性检测 (稳定版)
+        //  AIController 类 —— 激进吃食物策略
         // ================================================================
         class AIController {
 
             constructor(game) {
                 this.game = game;
                 this.GRID_SIZE = game.GRID_SIZE;
+                this.lastLog = '';
             }
 
             /**
              * 对外接口：获取下一个移动方向
-             * 返回 { dx, dy } 或 null
              */
             getNextDirection() {
                 const snake = this.game.snake;
@@ -283,60 +279,56 @@
                 const food = this.game.food;
 
                 if (!food) {
-                    console.warn('[AI] 食物不存在');
+                    this._log('等待食物生成');
                     return null;
                 }
 
-                // ---- 1. 尝试 BFS 到食物，并检测安全性 ----
+                // ----- 1. 优先尝试 BFS 到食物（不再检查安全性） -----
                 const dirToFood = this._bfs(head, food);
                 if (dirToFood) {
-                    // 模拟吃掉食物后的蛇状态
-                    const newSnake = snake.map(seg => ({ ...seg }));
-                    newSnake.push({ x: food.x, y: food.y }); // 蛇头移到食物位置，尾部不动
-                    const newHead = food;
-                    const oldTail = snake[0];
-
-                    // 检查新蛇头能否到达旧蛇尾 (若可达，说明吃后仍有安全空间)
-                    if (this._canReach(newHead, oldTail, newSnake)) {
-                        console.log(
-                            `[AI] 安全路径到食物 | 食物(${food.x},${food.y}) | 蛇头(${head.x},${head.y}) | 方向: ${this._dirToString(dirToFood)}`
-                            );
-                        return dirToFood;
-                    } else {
-                        console.log(
-                            `[AI] 到食物的路径不安全 (吃后可能死亡) → 转尾随 | 食物(${food.x},${food.y})`
-                            );
-                    }
+                    this._log('目标：吃食物 | 原因：有路径');
+                    return dirToFood;
+                } else {
+                    this._log('目标：无法到达食物 | 原因：无路径');
                 }
 
-                // ---- 2. 尾随策略 (BFS 到蛇尾) ----
+                // ----- 2. 尾随策略 (BFS 到蛇尾) -----
                 const tail = snake[0];
                 if (snake.length > 1) {
                     const dirToTail = this._bfs(head, tail);
-                    if (dirToTail) {
-                        console.log(
-                            `[AI] 尾随 | 蛇头(${head.x},${head.y}) | 方向: ${this._dirToString(dirToTail)}`
-                            );
+                    if (dirToTail && this._isSafeDirection(head, dirToTail.dx, dirToTail.dy)) {
+                        this._log('目标：尾随保命 | 原因：跟随蛇尾');
                         return dirToTail;
                     }
                 }
 
-                // ---- 3. 备选方向 (上 → 下 → 左 → 右) ----
+                // ----- 3. 保持当前方向（如果安全） -----
+                const curDir = this.game.direction;
+                if (this._isSafeDirection(head, curDir.dx, curDir.dy)) {
+                    this._log('目标：保持方向 | 原因：安全');
+                    return { dx: curDir.dx, dy: curDir.dy };
+                }
+
+                // ----- 4. 备选方向（上→下→左→右，允许反向） -----
                 const fallback = this._getFallback(head);
                 if (fallback) {
-                    console.log(
-                        `[AI] 备选方向 | 蛇头(${head.x},${head.y}) | 方向: ${this._dirToString(fallback)}`
-                        );
+                    this._log('目标：紧急避让 | 原因：无其他安全方向');
                     return fallback;
                 }
 
-                console.warn('[AI] 无路可走');
+                // ----- 5. 最后保底：任意方向 -----
+                const anyDir = this._getAnyDirection(head);
+                if (anyDir) {
+                    this._log('目标：最后一搏 | 原因：所有方向均不安全');
+                    return anyDir;
+                }
+
+                this._log('目标：无路可走');
                 return null;
             }
 
             /**
              * BFS 搜索从 start 到 target 的第一步方向
-             * 返回 { dx, dy } 或 null
              */
             _bfs(start, target) {
                 const gridSize = this.GRID_SIZE;
@@ -383,81 +375,65 @@
             }
 
             /**
-             * 检测从 from 到 to 是否可达（考虑蛇身，蛇尾视为可通行）
+             * 检查某个方向是否安全（不撞墙、不撞自身，蛇尾视为可通行）
              */
-            _canReach(from, to, snake) {
-                const gridSize = this.GRID_SIZE;
-                const snakeSet = new Set(snake.map(s => `${s.x},${s.y}`));
-                const tail = snake[0];
-                const tailKey = `${tail.x},${tail.y}`;
-
-                const visited = new Set();
-                const queue = [];
-                visited.add(`${from.x},${from.y}`);
-                queue.push({ x: from.x, y: from.y });
-
-                const dirs = [
-                    { dx: 0, dy: -1 }, { dx: 0, dy: 1 },
-                    { dx: -1, dy: 0 }, { dx: 1, dy: 0 }
-                ];
-
-                while (queue.length > 0) {
-                    const cur = queue.shift();
-                    if (cur.x === to.x && cur.y === to.y) return true;
-                    for (const d of dirs) {
-                        const nx = cur.x + d.dx;
-                        const ny = cur.y + d.dy;
-                        const key = `${nx},${ny}`;
-                        if (nx < 0 || nx >= gridSize || ny < 0 || ny >= gridSize) continue;
-                        if (visited.has(key)) continue;
-                        if (snakeSet.has(key) && key !== tailKey) continue;
-                        visited.add(key);
-                        queue.push({ x: nx, y: ny });
-                    }
-                }
-                return false;
-            }
-
-            /**
-             * 备选方向：按优先级 上 → 下 → 左 → 右 选择一个安全方向
-             */
-            _getFallback(head) {
+            _isSafeDirection(head, dx, dy) {
                 const gridSize = this.GRID_SIZE;
                 const snake = this.game.snake;
                 const snakeSet = new Set(snake.map(s => `${s.x},${s.y}`));
                 const tail = snake[0];
                 const tailKey = `${tail.x},${tail.y}`;
 
-                const priorities = [
+                const nx = head.x + dx;
+                const ny = head.y + dy;
+                const key = `${nx},${ny}`;
+                if (nx < 0 || nx >= gridSize || ny < 0 || ny >= gridSize) return false;
+                if (snakeSet.has(key) && key !== tailKey) return false;
+                return true;
+            }
+
+            /**
+             * 备选方向：按优先级上→下→左→右（允许反向）
+             */
+            _getFallback(head) {
+                const dirs = [
                     { dx: 0, dy: -1 }, // 上
                     { dx: 0, dy: 1 },  // 下
                     { dx: -1, dy: 0 }, // 左
                     { dx: 1, dy: 0 }   // 右
                 ];
-
-                for (const d of priorities) {
-                    const nx = head.x + d.dx;
-                    const ny = head.y + d.dy;
-                    const key = `${nx},${ny}`;
-                    if (nx < 0 || nx >= gridSize || ny < 0 || ny >= gridSize) continue;
-                    if (snakeSet.has(key) && key !== tailKey) continue;
-                    return { dx: d.dx, dy: d.dy };
+                for (const d of dirs) {
+                    if (this._isSafeDirection(head, d.dx, d.dy)) {
+                        return { dx: d.dx, dy: d.dy };
+                    }
                 }
                 return null;
             }
 
             /**
-             * 将方向对象转为字符串（日志用）
+             * 保底：任意安全方向
              */
-            _dirToString(dir) {
-                if (!dir) return 'NONE';
-                const map = {
-                    '0,-1': 'UP',
-                    '0,1': 'DOWN',
-                    '-1,0': 'LEFT',
-                    '1,0': 'RIGHT'
-                };
-                return map[`${dir.dx},${dir.dy}`] || 'UNKNOWN';
+            _getAnyDirection(head) {
+                const dirs = [
+                    { dx: 0, dy: -1 }, { dx: 0, dy: 1 },
+                    { dx: -1, dy: 0 }, { dx: 1, dy: 0 }
+                ];
+                for (const d of dirs) {
+                    if (this._isSafeDirection(head, d.dx, d.dy)) {
+                        return { dx: d.dx, dy: d.dy };
+                    }
+                }
+                return null;
+            }
+
+            /**
+             * 智能日志：仅在消息变化时输出
+             */
+            _log(msg) {
+                if (this.lastLog !== msg) {
+                    console.log(`[AI] ${msg}`);
+                    this.lastLog = msg;
+                }
             }
 
             /**
@@ -498,7 +474,6 @@
                 this.gameOver = false;
                 this.isRunning = false;
 
-                // AI 相关
                 this.aiActive = false;
                 this.aiController = new AIController(this);
                 this.aiTimer = null;
@@ -511,12 +486,10 @@
                 this.reset();
             }
 
-            // ---------- 强制设置方向（AI专用，不检查反向） ----------
             forceDirection(dx, dy) {
                 this.nextDirection = { dx, dy };
             }
 
-            // ---------- 切换 AI 模式 ----------
             toggleAI() {
                 if (this.gameOver) {
                     alert('游戏已结束，请先点击「重新开始」');
@@ -536,7 +509,6 @@
 
             _startAI() {
                 if (this.aiTimer) return;
-                // 立即执行一步
                 this.aiController.step();
                 this.aiTimer = setInterval(() => {
                     if (!this.gameOver && this.aiActive) {
@@ -562,7 +534,6 @@
                 this.aiBtn.classList.remove('active');
             }
 
-            // ---------- 重置 ----------
             reset() {
                 this._stopAI();
                 this._stopLoop();
@@ -604,11 +575,16 @@
                 this.isRunning = false;
             }
 
-            // ---------- 更新逻辑 ----------
+            // ---------- 核心更新：AI 激活时强制应用方向 ----------
             _update() {
-                // 应用方向（若AI激活，nextDirection由AI强制设置）
-                if (!this._isOpposite(this.nextDirection, this.direction)) {
+                // 如果 AI 激活，直接使用 nextDirection（不检查反向）
+                if (this.aiActive) {
                     this.direction = { ...this.nextDirection };
+                } else {
+                    // 手动模式：防止反向
+                    if (!this._isOpposite(this.nextDirection, this.direction)) {
+                        this.direction = { ...this.nextDirection };
+                    }
                 }
 
                 const head = this.snake[this.snake.length - 1];
@@ -636,7 +612,6 @@
                 }
             }
 
-            // ---------- 绘制 ----------
             draw() {
                 const ctx = this.ctx;
                 const W = this.canvas.width;
@@ -807,7 +782,6 @@
                 }
             }
 
-            // ---------- 辅助 ----------
             _generateFood() {
                 const maxAttempts = 1000;
                 for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -872,16 +846,14 @@
                 return (dir1.dx === -dir2.dx && dir1.dy === -dir2.dy);
             }
 
-            // ---------- 事件绑定 ----------
             _bindEvents() {
-                // 键盘控制（AI 激活时忽略）
                 document.addEventListener('keydown', (e) => {
                     const key = e.key;
                     if (key.startsWith('Arrow')) {
                         e.preventDefault();
                     }
                     if (this.gameOver) return;
-                    if (this.aiActive) return; // AI 运行时禁用键盘
+                    if (this.aiActive) return;
 
                     let newDx = 0,
                         newDy = 0;
@@ -924,7 +896,7 @@
         }
 
         // ================================================================
-        //  启动游戏
+        //  启动
         // ================================================================
         document.addEventListener('DOMContentLoaded', () => {
             const game = new Game('gameCanvas', 'scoreDisplay', 'restartBtn', 'aiBtn');
