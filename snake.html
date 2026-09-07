@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>贪吃蛇 · 科技版 + 智能AI（激进吃食物版）</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>贪吃蛇 · 科技版 + 智能AI（稳定高分）</title>
     <style>
         * {
             margin: 0;
@@ -180,6 +180,41 @@
             box-shadow: 0 8px 40px rgba(255, 77, 109, 0.5);
         }
 
+        /* 移动端触摸控制 */
+        .touch-controls {
+            display: none;
+            margin-top: 16px;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .touch-row {
+            display: flex;
+            gap: 12px;
+        }
+        .touch-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(0, 240, 255, 0.4);
+            color: #00f0ff;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.15s;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            touch-action: manipulation;
+        }
+        .touch-btn:active {
+            background: rgba(0, 240, 255, 0.3);
+            transform: scale(0.9);
+        }
+
         @media (max-width: 580px) {
             .game-container {
                 padding: 20px 18px 28px;
@@ -207,6 +242,9 @@
             .footer {
                 gap: 10px;
             }
+            .touch-controls {
+                display: flex;
+            }
         }
 
         @media (max-width: 400px) {
@@ -231,6 +269,11 @@
                 padding: 8px 16px;
                 font-size: 13px;
             }
+            .touch-btn {
+                width: 48px;
+                height: 48px;
+                font-size: 20px;
+            }
         }
     </style>
 </head>
@@ -252,6 +295,16 @@
             <canvas id="gameCanvas" width="500" height="500"></canvas>
         </div>
 
+        <!-- 移动端虚拟方向键 -->
+        <div class="touch-controls">
+            <button class="touch-btn" data-dir="up">▲</button>
+            <div class="touch-row">
+                <button class="touch-btn" data-dir="left">◀</button>
+                <button class="touch-btn" data-dir="down">▼</button>
+                <button class="touch-btn" data-dir="right">▶</button>
+            </div>
+        </div>
+
         <div class="footer">
             <button id="restartBtn" class="btn">⟳ 重新开始</button>
             <button id="aiBtn" class="btn">🤖 AI自动玩</button>
@@ -260,111 +313,187 @@
 
     <script>
         // ================================================================
-        //  AIController 类 —— 激进吃食物策略
+        //  AIController 类 —— 核心算法（已移除冗余缓存，优化安全性）
         // ================================================================
         class AIController {
 
             constructor(game) {
                 this.game = game;
                 this.GRID_SIZE = game.GRID_SIZE;
-                this.lastLog = '';
-            }
-
-            /**
-             * 对外接口：获取下一个移动方向
-             */
-            getNextDirection() {
-                const snake = this.game.snake;
-                const head = snake[snake.length - 1];
-                const food = this.game.food;
-
-                if (!food) {
-                    this._log('等待食物生成');
-                    return null;
-                }
-
-                // ----- 1. 优先尝试 BFS 到食物（不再检查安全性） -----
-                const dirToFood = this._bfs(head, food);
-                if (dirToFood) {
-                    this._log('目标：吃食物 | 原因：有路径');
-                    return dirToFood;
-                } else {
-                    this._log('目标：无法到达食物 | 原因：无路径');
-                }
-
-                // ----- 2. 尾随策略 (BFS 到蛇尾) -----
-                const tail = snake[0];
-                if (snake.length > 1) {
-                    const dirToTail = this._bfs(head, tail);
-                    if (dirToTail && this._isSafeDirection(head, dirToTail.dx, dirToTail.dy)) {
-                        this._log('目标：尾随保命 | 原因：跟随蛇尾');
-                        return dirToTail;
-                    }
-                }
-
-                // ----- 3. 保持当前方向（如果安全） -----
-                const curDir = this.game.direction;
-                if (this._isSafeDirection(head, curDir.dx, curDir.dy)) {
-                    this._log('目标：保持方向 | 原因：安全');
-                    return { dx: curDir.dx, dy: curDir.dy };
-                }
-
-                // ----- 4. 备选方向（上→下→左→右，允许反向） -----
-                const fallback = this._getFallback(head);
-                if (fallback) {
-                    this._log('目标：紧急避让 | 原因：无其他安全方向');
-                    return fallback;
-                }
-
-                // ----- 5. 最后保底：任意方向 -----
-                const anyDir = this._getAnyDirection(head);
-                if (anyDir) {
-                    this._log('目标：最后一搏 | 原因：所有方向均不安全');
-                    return anyDir;
-                }
-
-                this._log('目标：无路可走');
-                return null;
-            }
-
-            /**
-             * BFS 搜索从 start 到 target 的第一步方向
-             */
-            _bfs(start, target) {
-                const gridSize = this.GRID_SIZE;
-                const snake = this.game.snake;
-                const snakeSet = new Set(snake.map(s => `${s.x},${s.y}`));
-                const tail = snake[0];
-                const tailKey = `${tail.x},${tail.y}`;
-
-                if (start.x === target.x && start.y === target.y) return null;
-
-                const visited = new Set();
-                const queue = [];
-                visited.add(`${start.x},${start.y}`);
-                queue.push({ x: start.x, y: start.y, dx: 0, dy: 0 });
-
-                const dirs = [
+                this.DIRS = [
                     { dx: 0, dy: -1 }, // 上
                     { dx: 0, dy: 1 },  // 下
                     { dx: -1, dy: 0 }, // 左
                     { dx: 1, dy: 0 }   // 右
                 ];
+                this.lastLog = '';
+            }
+
+            /**
+             * 主决策入口：返回下一步方向 {dx, dy} 或 null
+             */
+            getNextDirection() {
+                const snake = this.game.snake;
+                const head = snake[snake.length - 1];
+                const food = this.game.food;
+                if (!food) {
+                    this._log('等待食物生成');
+                    return null;
+                }
+
+                // 1. 尝试安全吃果路径
+                const foodPath = this._bfsToFood(head, food, snake);
+                if (foodPath && foodPath.length > 0) {
+                    const firstDir = foodPath[0];
+                    const nextHead = { x: head.x + firstDir.dx, y: head.y + firstDir.dy };
+                    const ateFood = (nextHead.x === food.x && nextHead.y === food.y);
+                    const simSnake = this._simulateStep(snake, nextHead, ateFood);
+                    if (this._canReachTail(simSnake)) {
+                        this._log('目标：安全吃果');
+                        return firstDir;
+                    }
+                    // 尝试替代路径（排除第一步）
+                    const altDir = this._findAlternativeToFood(head, food, snake, firstDir);
+                    if (altDir) {
+                        const altHead = { x: head.x + altDir.dx, y: head.y + altDir.dy };
+                        const altAte = (altHead.x === food.x && altHead.y === food.y);
+                        const altSimSnake = this._simulateStep(snake, altHead, altAte);
+                        if (this._canReachTail(altSimSnake)) {
+                            this._log('目标：安全吃果（绕路）');
+                            return altDir;
+                        }
+                    }
+                }
+
+                // 2. 追踪蛇尾（保持空间）
+                const tailDir = this._bfsToTail(head, snake);
+                if (tailDir) {
+                    this._log('目标：尾随保命');
+                    return tailDir;
+                }
+
+                // 3. 选择可达空间最大的方向
+                const spaceDir = this._maxSpaceDirection(head, snake);
+                if (spaceDir) {
+                    this._log('目标：最大空间');
+                    return spaceDir;
+                }
+
+                this._log('无路可走');
+                return null;
+            }
+
+            /**
+             * BFS 寻找从蛇头到食物的完整路径（考虑蛇身移动）
+             * 返回方向数组（第一步方向在索引0），若不可达返回null
+             */
+            _bfsToFood(head, food, snake) {
+                const size = this.GRID_SIZE;
+                const startKey = `${head.x},${head.y}`;
+
+                const queue = [];
+                const visited = new Set();
+                visited.add(startKey);
+                queue.push({
+                    head: { x: head.x, y: head.y },
+                    snake: snake.map(s => ({ x: s.x, y: s.y })),
+                    path: []
+                });
 
                 while (queue.length > 0) {
                     const cur = queue.shift();
-                    if (cur.x === target.x && cur.y === target.y) {
+                    if (cur.head.x === food.x && cur.head.y === food.y) {
+                        return cur.path;
+                    }
+
+                    for (const d of this.DIRS) {
+                        const nh = { x: cur.head.x + d.dx, y: cur.head.y + d.dy };
+                        if (nh.x < 0 || nh.x >= size || nh.y < 0 || nh.y >= size) continue;
+
+                        const ate = (nh.x === food.x && nh.y === food.y);
+                        const ns = [...cur.snake];
+                        ns.push(nh);
+                        if (!ate) ns.shift();
+
+                        // 检测新蛇头是否撞到新蛇身（尾部除外）
+                        let collision = false;
+                        for (let i = 0; i < ns.length - 1; i++) {
+                            if (ns[i].x === nh.x && ns[i].y === nh.y) {
+                                collision = true;
+                                break;
+                            }
+                        }
+                        if (collision) continue;
+
+                        const key = `${nh.x},${nh.y}`;
+                        if (visited.has(key)) continue;
+                        visited.add(key);
+                        queue.push({
+                            head: nh,
+                            snake: ns,
+                            path: [...cur.path, d]
+                        });
+                    }
+                }
+
+                return null;
+            }
+
+            /**
+             * 寻找替代路径：排除某个第一步方向后重新BFS
+             */
+            _findAlternativeToFood(head, food, snake, excludedDir) {
+                const size = this.GRID_SIZE;
+                for (const d of this.DIRS) {
+                    if (d.dx === excludedDir.dx && d.dy === excludedDir.dy) continue;
+                    const nh = { x: head.x + d.dx, y: head.y + d.dy };
+                    if (nh.x < 0 || nh.x >= size || nh.y < 0 || nh.y >= size) continue;
+                    if (!this._isSafeSimple(nh, snake, false)) continue;
+                    const subSnake = this._simulateStep(snake, nh, (nh.x === food.x && nh.y === food.y));
+                    const subPath = this._bfsToFood(nh, food, subSnake);
+                    if (subPath && subPath.length > 0) {
+                        const simSnake = this._simulateStep(snake, nh, (nh.x === food.x && nh.y === food.y));
+                        if (this._canReachTail(simSnake)) {
+                            return d;
+                        }
+                    }
+                }
+                return null;
+            }
+
+            /**
+             * BFS 从蛇头到蛇尾（蛇尾位置可通行），返回第一步方向
+             */
+            _bfsToTail(head, snake) {
+                const size = this.GRID_SIZE;
+                const tail = snake[0];
+                if (head.x === tail.x && head.y === tail.y) return null;
+
+                const snakeSet = new Set();
+                for (let i = 1; i < snake.length; i++) {
+                    snakeSet.add(`${snake[i].x},${snake[i].y}`);
+                }
+                const tailKey = `${tail.x},${tail.y}`;
+
+                const visited = new Set();
+                const queue = [];
+                visited.add(`${head.x},${head.y}`);
+                queue.push({ x: head.x, y: head.y, dx: 0, dy: 0 });
+
+                while (queue.length > 0) {
+                    const cur = queue.shift();
+                    if (cur.x === tail.x && cur.y === tail.y) {
                         if (cur.dx === 0 && cur.dy === 0) return null;
                         return { dx: cur.dx, dy: cur.dy };
                     }
-                    for (const d of dirs) {
+
+                    for (const d of this.DIRS) {
                         const nx = cur.x + d.dx;
                         const ny = cur.y + d.dy;
                         const key = `${nx},${ny}`;
-                        if (nx < 0 || nx >= gridSize || ny < 0 || ny >= gridSize) continue;
+                        if (nx < 0 || nx >= size || ny < 0 || ny >= size) continue;
                         if (visited.has(key)) continue;
                         if (snakeSet.has(key) && key !== tailKey) continue;
-
                         visited.add(key);
                         const firstDx = (cur.dx === 0 && cur.dy === 0) ? d.dx : cur.dx;
                         const firstDy = (cur.dx === 0 && cur.dy === 0) ? d.dy : cur.dy;
@@ -375,59 +504,124 @@
             }
 
             /**
-             * 检查某个方向是否安全（不撞墙、不撞自身，蛇尾视为可通行）
+             * 检查从蛇头能否到达蛇尾（BFS，蛇尾可通行）
              */
-            _isSafeDirection(head, dx, dy) {
-                const gridSize = this.GRID_SIZE;
-                const snake = this.game.snake;
-                const snakeSet = new Set(snake.map(s => `${s.x},${s.y}`));
+            _canReachTail(snake) {
+                const head = snake[snake.length - 1];
                 const tail = snake[0];
+                if (head.x === tail.x && head.y === tail.y) return true;
+
+                const size = this.GRID_SIZE;
+                const snakeSet = new Set();
+                for (let i = 1; i < snake.length; i++) {
+                    snakeSet.add(`${snake[i].x},${snake[i].y}`);
+                }
                 const tailKey = `${tail.x},${tail.y}`;
 
-                const nx = head.x + dx;
-                const ny = head.y + dy;
-                const key = `${nx},${ny}`;
-                if (nx < 0 || nx >= gridSize || ny < 0 || ny >= gridSize) return false;
-                if (snakeSet.has(key) && key !== tailKey) return false;
+                const visited = new Set();
+                const queue = [];
+                visited.add(`${head.x},${head.y}`);
+                queue.push({ x: head.x, y: head.y });
+
+                while (queue.length > 0) {
+                    const cur = queue.shift();
+                    if (cur.x === tail.x && cur.y === tail.y) return true;
+
+                    for (const d of this.DIRS) {
+                        const nx = cur.x + d.dx;
+                        const ny = cur.y + d.dy;
+                        const key = `${nx},${ny}`;
+                        if (nx < 0 || nx >= size || ny < 0 || ny >= size) continue;
+                        if (visited.has(key)) continue;
+                        if (snakeSet.has(key) && key !== tailKey) continue;
+                        visited.add(key);
+                        queue.push({ x: nx, y: ny });
+                    }
+                }
+                return false;
+            }
+
+            /**
+             * 模拟蛇移动一步
+             */
+            _simulateStep(snake, newHead, ateFood) {
+                const ns = snake.map(s => ({ x: s.x, y: s.y }));
+                ns.push(newHead);
+                if (!ateFood) ns.shift();
+                return ns;
+            }
+
+            /**
+             * 简单安全检测（不撞墙、不撞蛇身，蛇尾可通行取决于 willEat）
+             * willEat = true 时蛇尾不可通行（因为长度会增加），false 时蛇尾可通行
+             */
+            _isSafeSimple(newHead, snake, willEat = false) {
+                const size = this.GRID_SIZE;
+                if (newHead.x < 0 || newHead.x >= size || newHead.y < 0 || newHead.y >= size) return false;
+                const limit = willEat ? snake.length : snake.length - 1;
+                for (let i = 0; i < limit; i++) {
+                    if (snake[i].x === newHead.x && snake[i].y === newHead.y) return false;
+                }
                 return true;
             }
 
             /**
-             * 备选方向：按优先级上→下→左→右（允许反向）
+             * 选择可达空间最大的方向
              */
-            _getFallback(head) {
-                const dirs = [
-                    { dx: 0, dy: -1 }, // 上
-                    { dx: 0, dy: 1 },  // 下
-                    { dx: -1, dy: 0 }, // 左
-                    { dx: 1, dy: 0 }   // 右
-                ];
-                for (const d of dirs) {
-                    if (this._isSafeDirection(head, d.dx, d.dy)) {
-                        return { dx: d.dx, dy: d.dy };
+            _maxSpaceDirection(head, snake) {
+                let bestSpace = -1;
+                let bestDir = null;
+
+                for (const d of this.DIRS) {
+                    const nh = { x: head.x + d.dx, y: head.y + d.dy };
+                    // 默认模拟未吃到食物，蛇尾可移动
+                    if (!this._isSafeSimple(nh, snake, false)) continue;
+                    const simSnake = this._simulateStep(snake, nh, false);
+                    const space = this._countReachable(nh, simSnake);
+                    if (space > bestSpace) {
+                        bestSpace = space;
+                        bestDir = d;
                     }
                 }
-                return null;
+                return bestDir;
             }
 
             /**
-             * 保底：任意安全方向
+             * BFS 计算从 start 出发的可达格子数（用于空间评估）
              */
-            _getAnyDirection(head) {
-                const dirs = [
-                    { dx: 0, dy: -1 }, { dx: 0, dy: 1 },
-                    { dx: -1, dy: 0 }, { dx: 1, dy: 0 }
-                ];
-                for (const d of dirs) {
-                    if (this._isSafeDirection(head, d.dx, d.dy)) {
-                        return { dx: d.dx, dy: d.dy };
+            _countReachable(start, snakeBody) {
+                const size = this.GRID_SIZE;
+                const snakeSet = new Set();
+                for (let i = 0; i < snakeBody.length - 1; i++) {
+                    snakeSet.add(`${snakeBody[i].x},${snakeBody[i].y}`);
+                }
+                const tailKey = `${snakeBody[0].x},${snakeBody[0].y}`;
+
+                const visited = new Set();
+                const queue = [];
+                visited.add(`${start.x},${start.y}`);
+                queue.push({ x: start.x, y: start.y });
+                let count = 0;
+
+                while (queue.length > 0) {
+                    const cur = queue.shift();
+                    count++;
+                    for (const d of this.DIRS) {
+                        const nx = cur.x + d.dx;
+                        const ny = cur.y + d.dy;
+                        const key = `${nx},${ny}`;
+                        if (nx < 0 || nx >= size || ny < 0 || ny >= size) continue;
+                        if (visited.has(key)) continue;
+                        if (snakeSet.has(key) && key !== tailKey) continue;
+                        visited.add(key);
+                        queue.push({ x: nx, y: ny });
                     }
                 }
-                return null;
+                return count;
             }
 
             /**
-             * 智能日志：仅在消息变化时输出
+             * 日志去重
              */
             _log(msg) {
                 if (this.lastLog !== msg) {
@@ -435,22 +629,11 @@
                     this.lastLog = msg;
                 }
             }
-
-            /**
-             * 执行一步 AI 决策
-             */
-            step() {
-                if (this.game.gameOver) return;
-                const dir = this.getNextDirection();
-                if (dir) {
-                    this.game.forceDirection(dir.dx, dir.dy);
-                }
-            }
         }
 
 
         // ================================================================
-        //  Game 类
+        //  Game 类（改进：AI决策同步至游戏循环，防掉头，触摸控制）
         // ================================================================
         class Game {
 
@@ -476,8 +659,6 @@
 
                 this.aiActive = false;
                 this.aiController = new AIController(this);
-                this.aiTimer = null;
-                this.AI_INTERVAL = 200;
 
                 this.loopTimer = null;
                 this.INTERVAL_MS = 145;
@@ -486,7 +667,15 @@
                 this.reset();
             }
 
+            /**
+             * 设置下一个方向（由AI调用或触摸/键盘调用）
+             * 添加防掉头检查
+             */
             forceDirection(dx, dy) {
+                // 禁止掉头
+                if (dx === -this.direction.dx && dy === -this.direction.dy) {
+                    return;
+                }
                 this.nextDirection = { dx, dy };
             }
 
@@ -498,37 +687,18 @@
                 this.aiActive = !this.aiActive;
                 if (this.aiActive) {
                     this._startAI();
-                    this.aiBtn.textContent = '⏹ 停止AI';
-                    this.aiBtn.classList.add('active');
                 } else {
                     this._stopAI();
-                    this.aiBtn.textContent = '🤖 AI自动玩';
-                    this.aiBtn.classList.remove('active');
                 }
             }
 
             _startAI() {
-                if (this.aiTimer) return;
-                this.aiController.step();
-                this.aiTimer = setInterval(() => {
-                    if (!this.gameOver && this.aiActive) {
-                        this.aiController.step();
-                    } else {
-                        if (this.gameOver) {
-                            this._stopAI();
-                            this.aiBtn.textContent = '🤖 AI自动玩';
-                            this.aiBtn.classList.remove('active');
-                            this.aiActive = false;
-                        }
-                    }
-                }, this.AI_INTERVAL);
+                // AI决策将在游戏循环中同步进行，无需额外定时器
+                this.aiBtn.textContent = '⏹ 停止AI';
+                this.aiBtn.classList.add('active');
             }
 
             _stopAI() {
-                if (this.aiTimer) {
-                    clearInterval(this.aiTimer);
-                    this.aiTimer = null;
-                }
                 this.aiActive = false;
                 this.aiBtn.textContent = '🤖 AI自动玩';
                 this.aiBtn.classList.remove('active');
@@ -575,13 +745,20 @@
                 this.isRunning = false;
             }
 
-            // ---------- 核心更新：AI 激活时强制应用方向 ----------
             _update() {
-                // 如果 AI 激活，直接使用 nextDirection（不检查反向）
+                // AI激活时，在每次移动前获取方向
+                if (this.aiActive && !this.gameOver) {
+                    const aiDir = this.aiController.getNextDirection();
+                    if (aiDir) {
+                        // 通过forceDirection设置（内部会防掉头）
+                        this.forceDirection(aiDir.dx, aiDir.dy);
+                    }
+                }
+
+                // 方向更新：AI激活时直接使用nextDirection（已防掉头）
                 if (this.aiActive) {
                     this.direction = { ...this.nextDirection };
                 } else {
-                    // 手动模式：防止反向
                     if (!this._isOpposite(this.nextDirection, this.direction)) {
                         this.direction = { ...this.nextDirection };
                     }
@@ -847,6 +1024,7 @@
             }
 
             _bindEvents() {
+                // 键盘事件
                 document.addEventListener('keydown', (e) => {
                     const key = e.key;
                     if (key.startsWith('Arrow')) {
@@ -873,10 +1051,37 @@
                         default:
                             return;
                     }
-                    const candidate = { dx: newDx, dy: newDy };
-                    if (!this._isOpposite(candidate, this.direction)) {
-                        this.nextDirection = candidate;
-                    }
+                    this.forceDirection(newDx, newDy);
+                });
+
+                // 触摸按钮事件
+                document.querySelectorAll('.touch-btn').forEach(btn => {
+                    btn.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        if (this.gameOver || this.aiActive) return;
+                        const dir = btn.dataset.dir;
+                        let newDx = 0, newDy = 0;
+                        switch (dir) {
+                            case 'up': newDy = -1; break;
+                            case 'down': newDy = 1; break;
+                            case 'left': newDx = -1; break;
+                            case 'right': newDx = 1; break;
+                        }
+                        this.forceDirection(newDx, newDy);
+                    });
+                    // 同时也支持鼠标点击（便于调试）
+                    btn.addEventListener('click', (e) => {
+                        if (this.gameOver || this.aiActive) return;
+                        const dir = btn.dataset.dir;
+                        let newDx = 0, newDy = 0;
+                        switch (dir) {
+                            case 'up': newDy = -1; break;
+                            case 'down': newDy = 1; break;
+                            case 'left': newDx = -1; break;
+                            case 'right': newDx = 1; break;
+                        }
+                        this.forceDirection(newDx, newDy);
+                    });
                 });
 
                 this.restartBtn.addEventListener('click', () => {
@@ -887,6 +1092,7 @@
                     this.toggleAI();
                 });
 
+                // 阻止页面在方向键上滚动
                 window.addEventListener('keydown', (e) => {
                     if (e.key.startsWith('Arrow')) {
                         e.preventDefault();
