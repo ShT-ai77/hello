@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>贪吃蛇 · 科技版 + 智能AI + 主题切换</title>
+    <style>
+        :root {
+            --bg-gradient: radial-gradient(ellipse at 50% 30%, #0f1a3a, #080c1a);
+            --container-bg: rgba(8, 14, 34, 0.85);
+            --container-border: rgba(0, 240, 255, 0.20);
+            --text-color: rgba(255, 255, 255, 0.70);
+            --score-color: #00f0ff;
+            --btn-restart-bg: linear-gradient(135deg, #00f0ff, #00d4a0);
+            --btn-restart-text: #0a0e27;
+            --btn-ai-bg: linear-gradient(135deg, #f0a500, #ff7b2c);
+            --btn-ai-text: #0a0e27;
+            --btn-ai-active-bg: linear-gradient(135deg, #ff4d6d, #d62828);
+            --btn-ai-active-text: #fff;
+            --canvas-bg: #0b1028;
+            --grid-line: rgba(0, 240, 255, 0.07);
+            --grid-dot: rgba(0, 240, 255, 0.10);
+            --canvas-wrapper-border: linear-gradient(135deg, rgba(0, 240, 255, 0.30), rgba(123, 220, 181, 0.15));
+            --canvas-wrapper-pseudo: linear-gradient(135deg, rgba(0, 240, 255, 0.40), rgba(123, 220, 181, 0.10));
+            --touch-btn-bg: rgba(255, 255, 255, 0.08);
+        }
+
+        [data-theme="light"] {
+            --bg-gradient: radial-gradient(ellipse at 50% 30%, #eef2f7, #d5dce6);
+            --container-bg: rgba(255, 255, 255, 0.92);
+            --container-border: rgba(0, 120, 180, 0.25);
+            --text-color: rgba(30, 40, 60, 0.85);
+            --score-color: #0077cc;
+            --btn-restart-bg: linear-gradient(135deg, #00a8cc, #00b894);
+            --btn-restart-text: #ffffff;
+            --btn-ai-bg: linear-gradient(135deg, #ffb347, #ff7e5f);
+            --btn-ai-text: #ffffff;
+            --btn-ai-active-bg: linear-gradient(135deg, #ff5e6c, #d63031);
+            --btn-ai-active-text: #ffffff;
+            --canvas-bg: #f8fafc;
+            --grid-line: rgba(0, 100, 150, 0.08);
+            --grid-dot: rgba(0, 100, 150, 0.10);
+            --canvas-wrapper-border: linear-gradient(135deg, rgba(0, 150, 200, 0.25), rgba(0, 180, 150, 0.15));
+            --canvas-wrapper-pseudo: linear-gradient(135deg, rgba(0, 150, 200, 0.35), rgba(0, 180, 150, 0.12));
+            --touch-btn-bg: rgba(0, 0, 0, 0.06);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--bg-gradient);
+            font-family: 'Segoe UI', 'PingFang SC', Roboto, system-ui, sans-serif;
+            user-select: none;
+            transition: background 0.3s;
+        }
+
+        .game-container {
+            background: var(--container-bg);
+            backdrop-filter: blur(6px);
+            padding: 32px 40px 40px;
+            border-radius: 28px;
+            border: 1px solid var(--container-border);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2), 0 0 40px rgba(0, 240, 255, 0.06), inset 0 0 60px rgba(0, 240, 255, 0.03);
+            transition: box-shadow 0.3s, background 0.3s, border 0.3s;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            padding: 0 6px;
+            gap: 10px;
+        }
+
+        .title {
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #00f0ff, #7bdcb5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0, 240, 255, 0.25);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .title-icon {
+            font-size: 28px;
+            -webkit-text-fill-color: initial;
+            filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.4));
+        }
+
+        .score-area {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            font-size: 18px;
+            color: var(--text-color);
+            letter-spacing: 0.5px;
+            margin-left: auto;
+        }
+
+        .score-label {
+            font-weight: 300;
+        }
+
+        .score-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--score-color);
+            text-shadow: 0 0 20px rgba(0, 240, 255, 0.35);
+            min-width: 40px;
+            text-align: right;
+            transition: all 0.15s;
+        }
+
+        .theme-btn {
+            background: transparent;
+            border: 2px solid var(--score-color);
+            color: var(--score-color);
+            font-size: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .theme-btn:hover {
+            background: var(--score-color);
+            color: var(--container-bg);
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            padding: 3px;
+            border-radius: 16px;
+            background: var(--canvas-wrapper-border);
+            box-shadow: 0 0 40px rgba(0, 240, 255, 0.08);
+        }
+
+        .canvas-wrapper::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 18px;
+            padding: 2px;
+            background: var(--canvas-wrapper-pseudo);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 500px;
+            height: 500px;
+            border-radius: 14px;
+            background: var(--canvas-bg);
+            image-rendering: pixelated;
+        }
+
+        .footer {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 22px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 32px;
+            font-size: 17px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 40px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), transparent);
+            opacity: 0;
+            transition: opacity 0.25s;
+        }
+        .btn:hover::after {
+            opacity: 1;
+        }
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        #restartBtn {
+            color: var(--btn-restart-text);
+            background: var(--btn-restart-bg);
+        }
+        #restartBtn:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 36px rgba(0, 240, 255, 0.35);
+        }
+
+        #aiBtn {
+            color: var(--btn-ai-text);
+            background: var(--btn-ai-bg);
+        }
+        #aiBtn:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 36px rgba(240, 165, 0, 0.35);
+        }
+        #aiBtn.active {
+            background: var(--btn-ai-active-bg);
+            color: var(--btn-ai-active-text);
+            box-shadow: 0 0 30px rgba(255, 77, 109, 0.4);
+        }
+        #aiBtn.active:hover {
+            box-shadow: 0 8px 40px rgba(255, 77, 109, 0.5);
+        }
+
+        .touch-controls {
+            display: none;
+            margin-top: 16px;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .touch-row {
+            display: flex;
+            gap: 12px;
+        }
+        .touch-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--touch-btn-bg);
+            border: 2px solid var(--score-color);
+            color: var(--score-color);
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.15s;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            touch-action: manipulation;
+        }
+        .touch-btn:active {
+            background: var(--score-color);
+            color: var(--container-bg);
+            transform: scale(0.9);
+        }
+
+        @media (max-width: 580px) {
+            .game-container {
+                padding: 20px 18px 28px;
+                border-radius: 20px;
+                width: 96vw;
+            }
+            #gameCanvas {
+                width: 100%;
+                height: auto;
+                aspect-ratio: 1 / 1;
+            }
+            .canvas-wrapper {
+                padding: 2px;
+            }
+            .title {
+                font-size: 20px;
+            }
+            .score-value {
+                font-size: 22px;
+            }
+            .btn {
+                padding: 10px 20px;
+                font-size: 15px;
+            }
+            .footer {
+                gap: 10px;
+            }
+            .touch-controls {
+                display: flex;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .game-container {
+                padding: 14px 12px 20px;
+            }
+            .title {
+                font-size: 17px;
+                gap: 4px;
+            }
+            .title-icon {
+                font-size: 20px;
+            }
+            .score-area {
+                font-size: 14px;
+            }
+            .score-value {
+                font-size: 18px;
+                min-width: 30px;
+            }
+            .btn {
+                padding: 8px 16px;
+                font-size: 13px;
+            }
+            .touch-btn {
+                width: 48px;
+                height: 48px;
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body data-theme="dark">
+    <div class="game-container">
+        <div class="header">
+            <div class="title">
+                <span class="title-icon">◈</span>
+                贪吃蛇
+            </div>
+            <div class="score-area">
+                <span class="score-label">得分</span>
+                <span class="score-value" id="scoreDisplay">0</span>
+            </div>
+            <button id="themeToggle" class="theme-btn" title="切换主题">🌓</button>
+        </div>
+
+        <div class="canvas-wrapper">
+            <canvas id="gameCanvas" width="500" height="500"></canvas>
+        </div>
+
+        <div class="touch-controls">
+            <button class="touch-btn" data-dir="up">▲</button>
+            <div class="touch-row">
+                <button class="touch-btn" data-dir="left">◀</button>
+                <button class="touch-btn" data-dir="down">▼</button>
+                <button class="touch-btn" data-dir="right">▶</button>
+            </div>
+        </div>
+
+        <div class="footer">
+            <button id="restartBtn" class="btn">⟳ 重新开始</button>
+            <button id="aiBtn" class="btn">🤖 AI自动玩</button>
+        </div>
+    </div>
+
+    <script>
+        // ================================================================
+        //  AIController 类 —— 核心算法（完整版）
+        // ================================================================
+        class AIController {
+            constructor(game) {
+                this.game = game;
+                this.GRID_SIZE = game.GRID_SIZE;
+                this.DIRS = [
+                    { dx: 0, dy: -1 }, // 上
+                    { dx: 0, dy: 1 },  // 下
+                    { dx: -1, dy: 0 }, // 左
+                    { dx: 1, dy: 0 }   // 右
+                ];
+                this.lastLog = '';
+            }
+
+            getNextDirection() {
+                const snake = this.game.snake;
+                const head = snake[snake.length - 1];
+                const food = this.game.food;
+                if (!food) {
+                    this._log('等待食物生成');
+                    return null;
+                }
+
+                // 1. 尝试安全吃果路径
+                const foodPath = this._bfsToFood(head, food, snake);
+                if (foodPath && foodPath.length > 0) {
+                    const firstDir = foodPath[0];
+                    const nextHead = { x: head.x + firstDir.dx, y: head.y + firstDir.dy };
+                    const ateFood = (nextHead.x === food.x && nextHead.y === food.y);
+                    const simSnake = this._simulateStep(snake, nextHead, ateFood);
+                    if (this._canReachTail(simSnake)) {
+                        this._log('目标：安全吃果');
+                        return firstDir;
+                    }
+                    const altDir = this._findAlternativeToFood(head, food, snake, firstDir);
+                    if (altDir) {
+                        const altHead = { x: head.x + altDir.dx, y: head.y + altDir.dy };
+                        const altAte = (altHead.x === food.x && altHead.y === food.y);
+                        const altSimSnake = this._simulateStep(snake, altHead, altAte);
+                        if (this._canReachTail(altSimSnake)) {
+                            this._log('目标：安全吃果（绕路）');
+                            return altDir;
+                        }
+                    }
+                }
+
+                // 2. 追踪蛇尾
+                const tailDir = this._bfsToTail(head, snake);
+                if (tailDir) {
+                    this._log('目标：尾随保命');
+                    return tailDir;
+                }
+
+                // 3. 选择最大空间方向
+                const spaceDir = this._maxSpaceDirection(head, snake);
+                if (spaceDir) {
+                    this._log('目标：最大空间');
+                    return spaceDir;
+                }
+
+                this._log('无路可走');
+                return null;
+            }
+
+            _bfsToFood(head, food, snake) {
+                const size = this.GRID_SIZE;
+                const startKey = `${head.x},${head.y}`;
+                const queue = [];
+                const visited = new Set();
+                visited.add(startKey);
+                queue.push({
+                    head: { x: head.x, y: head.y },
+                    snake: snake.map(s => ({ x: s.x, y: s.y })),
+                    path: []
+                });
+
+                while (queue.length > 0) {
+                    const cur = queue.shift();
+                    if (cur.head.x === food.x && cur.head.y === food.y) {
+                        return cur.path;
+                    }
+
+                    for (const d of this.DIRS) {
+                        const nh = { x: cur.head.x + d.dx, y: cur.head.y + d.dy };
+                        if (nh.x < 0 || nh.x >= size || nh.y < 0 || nh.y >= size) continue;
+
+                        const ate = (nh.x === food.x && nh.y === food.y);
+                        const ns = [...cur.snake];
+                        ns.push(nh);
+                        if (!ate) ns.shift();
+
+                        let collision = false;
+                        for (let i = 0; i < ns.length - 1; i++) {
+                            if (ns[i].x === nh.x && ns[i].y === nh.y) {
+                                collision = true;
+                                break;
+                            }
+                        }
+                        if (collision) continue;
+
+                        const key = `${nh.x},${nh.y}`;
+                        if (visited.has(key)) continue;
+                        visited.add(key);
+                        queue.push({
+                            head: nh,
+                            snake: ns,
+                            path: [...cur.path, d]
+                        });
+                    }
+                }
+                return null;
+            }
+
+            _findAlternativeToFood(head, food, snake, excludedDir) {
+                const size = this.GRID_SIZE;
+                for (const d of this.DIRS) {
+                    if (d.dx === excludedDir.dx && d.dy === excludedDir.dy) continue;
+                    const nh = { x: head.x + d.dx, y: head.y + d.dy };
+                    if (nh.x < 0 || nh.x >= size || nh.y < 0 || nh.y >= size) continue;
+                    if (!this._isSafeSimple(nh, snake, false)) continue;
+                    const subSnake = this._simulateStep(snake, nh, (nh.x === food.x && nh.y === food.y));
+                    const subPath = this._bfsToFood(nh, food, subSnake);
+                    if (subPath && subPath.length > 0) {
+                        const simSnake = this._simulateStep(snake, nh, (nh.x === food.x && nh.y === food.y));
+                        if (this._canReachTail(simSnake)) {
+                            return d;
+                        }
+                    }
+                }
+                return null;
+            }
+
+            _bfsToTail(head, snake) {
+                const size = this.GRID_SIZE;
+                const tail = snake[0];
+                if (head.x === tail.x && head.y === tail.y) return null;
+
+                const snakeSet = new Set();
+                for (let i = 1; i < snake.length; i++) {
+                    snakeSet.add(`${snake[i].x},${snake[i].y}`);
+                }
+                const tailKey = `${tail.x},${tail.y}`;
+
+                const visited = new Set();
+                const queue = [];
+                visited.add(`${head.x},${head.y}`);
+                queue.push({ x: head.x, y: head.y, dx: 0, dy: 0 });
+
+                while (queue.length > 0) {
+                    const cur = queue.shift();
+                    if (cur.x === tail.x && cur.y === tail.y) {
+                        if (cur.dx === 0 && cur.dy === 0) return null;
+                        return { dx: cur.dx, dy: cur.dy };
+                    }
+
+                    for (const d of this.DIRS) {
+                        const nx = cur.x + d.dx;
+                        const ny = cur.y + d.dy;
+                        const key = `${nx},${ny}`;
+                        if (nx < 0 || nx >= size || ny < 0 || ny >= size) continue;
+                        if (visited.has(key)) continue;
+                        if (snakeSet.has(key) && key !== tailKey) continue;
+                        visited.add(key);
+                        const firstDx = (cur.dx === 0 && cur.dy === 0) ? d.dx : cur.dx;
+                        const firstDy = (cur.dx === 0 && cur.dy === 0) ? d.dy : cur.dy;
+                        queue.push({ x: nx, y: ny, dx: firstDx, dy: firstDy });
+                    }
+                }
+                return null;
+            }
+
+            _canReachTail(snake) {
+                const head = snake[snake.length - 1];
+                const tail = snake[0];
+                if (head.x === tail.x && head.y === tail.y) return true;
+
+                const size = this.GRID_SIZE;
+                const snakeSet = new Set();
+                for (let i = 1; i < snake.length; i++) {
+                    snakeSet.add(`${snake[i].x},${snake[i].y}`);
+                }
+                const tailKey = `${tail.x},${tail.y}`;
+
+                const visited = new Set();
+                const queue = [];
+                visited.add(`${head.x},${head.y}`);
+                queue.push({ x: head.x, y: head.y });
+
+                while (queue.length > 0) {
+                    const cur = queue.shift();
+                    if (cur.x === tail.x && cur.y === tail.y) return true;
+
+                    for (const d of this.DIRS) {
+                        const nx = cur.x + d.dx;
+                        const ny = cur.y + d.dy;
+                        const key = `${nx},${ny}`;
+                        if (nx < 0 || nx >= size || ny < 0 || ny >= size) continue;
+                        if (visited.has(key)) continue;
+                        if (snakeSet.has(key) && key !== tailKey) continue;
+                        visited.add(key);
+                        queue.push({ x: nx, y: ny });
+                    }
+                }
+                return false;
+            }
+
+            _simulateStep(snake, newHead, ateFood) {
+                const ns = snake.map(s => ({ x: s.x, y: s.y }));
+                ns.push(newHead);
+                if (!ateFood) ns.shift();
+                return ns;
+            }
+
+            _isSafeSimple(newHead, snake, willEat = false) {
+                const size = this.GRID_SIZE;
+                if (newHead.x < 0 || newHead.x >= size || newHead.y < 0 || newHead.y >= size) return false;
+                const limit = willEat ? snake.length : snake.length - 1;
+                for (let i = 0; i < limit; i++) {
+                    if (snake[i].x === newHead.x && snake[i].y === newHead.y) return false;
+                }
+                return true;
+            }
+
+            _maxSpaceDirection(head, snake) {
+                let bestSpace = -1;
+                let bestDir = null;
+                for (const d of this.DIRS) {
+                    const nh = { x: head.x + d.dx, y: head.y + d.dy };
+                    if (!this._isSafeSimple(nh, snake, false)) continue;
+                    const simSnake = this._simulateStep(snake, nh, false);
+                    const space = this._countReachable(nh, simSnake);
+                    if (space > bestSpace) {
+                        bestSpace = space;
+                        bestDir = d;
+                    }
+                }
+                return bestDir;
+            }
+
+            _countReachable(start, snakeBody) {
+                const size = this.GRID_SIZE;
+                const snakeSet = new Set();
+                for (let i = 0; i < snakeBody.length - 1; i++) {
+                    snakeSet.add(`${snakeBody[i].x},${snakeBody[i].y}`);
+                }
+                const tailKey = `${snakeBody[0].x},${snakeBody[0].y}`;
+
+                const visited = new Set();
+                const queue = [];
+                visited.add(`${start.x},${start.y}`);
+                queue.push({ x: start.x, y: start.y });
+                let count = 0;
+
+                while (queue.length > 0) {
+                    const cur = queue.shift();
+                    count++;
+                    for (const d of this.DIRS) {
+                        const nx = cur.x + d.dx;
+                        const ny = cur.y + d.dy;
+                        const key = `${nx},${ny}`;
+                        if (nx < 0 || nx >= size || ny < 0 || ny >= size) continue;
+                        if (visited.has(key)) continue;
+                        if (snakeSet.has(key) && key !== tailKey) continue;
+                        visited.add(key);
+                        queue.push({ x: nx, y: ny });
+                    }
+                }
+                return count;
+            }
+
+            _log(msg) {
+                if (this.lastLog !== msg) {
+                    console.log(`[AI] ${msg}`);
+                    this.lastLog = msg;
+                }
+            }
+        }
+
+
+        // ================================================================
+        //  Game 类（加入主题管理）
+        // ================================================================
+        class Game {
+            constructor(canvasId, scoreId, restartBtnId, aiBtnId) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.scoreSpan = document.getElementById(scoreId);
+                this.restartBtn = document.getElementById(restartBtnId);
+                this.aiBtn = document.getElementById(aiBtnId);
+                this.themeToggleBtn = document.getElementById('themeToggle');
+
+                this.GRID_SIZE = 20;
+                this.CELL_SIZE = 25;
+                this.canvas.width = this.GRID_SIZE * this.CELL_SIZE;
+                this.canvas.height = this.GRID_SIZE * this.CELL_SIZE;
+
+                this.snake = [];
+                this.direction = { dx: 1, dy: 0 };
+                this.nextDirection = { dx: 1, dy: 0 };
+                this.food = null;
+                this.score = 0;
+                this.gameOver = false;
+                this.isRunning = false;
+
+                this.aiActive = false;
+                this.aiController = new AIController(this);
+
+                this.loopTimer = null;
+                this.INTERVAL_MS = 145;
+
+                // 主题初始化
+                this.theme = localStorage.getItem('snakeTheme') || 'dark';
+                this._applyTheme(this.theme, false);
+
+                this._bindEvents();
+                this.reset();
+            }
+
+            forceDirection(dx, dy) {
+                if (dx === -this.direction.dx && dy === -this.direction.dy) return;
+                this.nextDirection = { dx, dy };
+            }
+
+            toggleAI() {
+                if (this.gameOver) {
+                    alert('游戏已结束，请先点击「重新开始」');
+                    return;
+                }
+                this.aiActive = !this.aiActive;
+                this._updateAIButton();
+            }
+
+            _updateAIButton() {
+                if (this.aiActive) {
+                    this.aiBtn.textContent = '⏹ 停止AI';
+                    this.aiBtn.classList.add('active');
+                } else {
+                    this.aiBtn.textContent = '🤖 AI自动玩';
+                    this.aiBtn.classList.remove('active');
+                }
+            }
+
+            reset() {
+                this.aiActive = false;
+                this._updateAIButton();
+                this._stopLoop();
+
+                this.gameOver = false;
+                this.isRunning = false;
+                this.score = 0;
+                this.direction = { dx: 1, dy: 0 };
+                this.nextDirection = { dx: 1, dy: 0 };
+
+                this.snake = [
+                    { x: 8, y: 10 },
+                    { x: 9, y: 10 },
+                    { x: 10, y: 10 }
+                ];
+
+                this._generateFood();
+                this._updateScore();
+                this.draw();
+                this._startLoop();
+            }
+
+            _startLoop() {
+                if (this.loopTimer) return;
+                this.isRunning = true;
+                this.loopTimer = setInterval(() => {
+                    if (!this.gameOver && this.isRunning) {
+                        this._update();
+                        this.draw();
+                    }
+                }, this.INTERVAL_MS);
+            }
+
+            _stopLoop() {
+                if (this.loopTimer) {
+                    clearInterval(this.loopTimer);
+                    this.loopTimer = null;
+                }
+                this.isRunning = false;
+            }
+
+            _update() {
+                if (this.aiActive && !this.gameOver) {
+                    const aiDir = this.aiController.getNextDirection();
+                    if (aiDir) this.forceDirection(aiDir.dx, aiDir.dy);
+                }
+
+                if (this.aiActive) {
+                    this.direction = { ...this.nextDirection };
+                } else {
+                    if (!this._isOpposite(this.nextDirection, this.direction)) {
+                        this.direction = { ...this.nextDirection };
+                    }
+                }
+
+                const head = this.snake[this.snake.length - 1];
+                const newHead = {
+                    x: head.x + this.direction.dx,
+                    y: head.y + this.direction.dy
+                };
+
+                const ateFood = (this.food && newHead.x === this.food.x && newHead.y === this.food.y);
+
+                this.snake.push(newHead);
+                if (!ateFood) {
+                    this.snake.shift();
+                } else {
+                    this.score += 1;
+                    this._updateScore();
+                    this._generateFood();
+                    if (!this.food) this._generateFood();
+                }
+
+                if (this._checkCollision()) this._gameOver();
+            }
+
+            draw() {
+                const ctx = this.ctx;
+                const W = this.canvas.width;
+                const H = this.canvas.height;
+                const cell = this.CELL_SIZE;
+                const grid = this.GRID_SIZE;
+                const isDark = this.theme === 'dark';
+
+                // 背景
+                ctx.fillStyle = isDark ? '#0b1028' : '#f8fafc';
+                ctx.fillRect(0, 0, W, H);
+
+                // 网格线
+                ctx.strokeStyle = isDark ? 'rgba(0, 240, 255, 0.07)' : 'rgba(0, 100, 150, 0.08)';
+                ctx.lineWidth = 0.8;
+                for (let i = 0; i <= grid; i++) {
+                    const pos = i * cell;
+                    ctx.beginPath();
+                    ctx.moveTo(pos, 0);
+                    ctx.lineTo(pos, H);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(0, pos);
+                    ctx.lineTo(W, pos);
+                    ctx.stroke();
+                }
+
+                // 网格点
+                ctx.fillStyle = isDark ? 'rgba(0, 240, 255, 0.10)' : 'rgba(0, 100, 150, 0.10)';
+                for (let i = 0; i <= grid; i++) {
+                    for (let j = 0; j <= grid; j++) {
+                        ctx.beginPath();
+                        ctx.arc(i * cell, j * cell, 1.2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+
+                // 食物
+                if (this.food) {
+                    const fx = this.food.x * cell + cell / 2;
+                    const fy = this.food.y * cell + cell / 2;
+                    const radius = cell * 0.40;
+                    const glow = ctx.createRadialGradient(fx, fy, 0, fx, fy, radius * 2.4);
+                    glow.addColorStop(0, 'rgba(255, 80, 120, 0.45)');
+                    glow.addColorStop(1, 'rgba(255, 80, 120, 0)');
+                    ctx.fillStyle = glow;
+                    ctx.beginPath();
+                    ctx.arc(fx, fy, radius * 2.4, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    const grad = ctx.createRadialGradient(fx - 3, fy - 3, 1, fx, fy, radius);
+                    grad.addColorStop(0, '#ff7b9c');
+                    grad.addColorStop(0.7, '#ff3366');
+                    grad.addColorStop(1, '#cc1144');
+                    ctx.shadowColor = '#ff3366';
+                    ctx.shadowBlur = 18;
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(fx, fy, radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = 'rgba(255,255,255,0.30)';
+                    ctx.beginPath();
+                    ctx.arc(fx - 3, fy - 4, radius * 0.25, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // 蛇
+                const len = this.snake.length;
+                for (let i = 0; i < len; i++) {
+                    const seg = this.snake[i];
+                    const sx = seg.x * cell;
+                    const sy = seg.y * cell;
+                    const isHead = (i === len - 1);
+                    const t = len > 1 ? i / (len - 1) : 0.5;
+                    const r = Math.round(0 + t * 20);
+                    const g = Math.round(180 + t * 75);
+                    const b = Math.round(255 - t * 60);
+                    const color = `rgb(${r}, ${g}, ${b})`;
+                    const padding = 1.5;
+                    const radius = 4;
+                    const x = sx + padding;
+                    const y = sy + padding;
+                    const w = cell - padding * 2;
+                    const h = cell - padding * 2;
+
+                    ctx.shadowColor = `rgba(0, 240, 255, ${isHead ? 0.50 : 0.20})`;
+                    ctx.shadowBlur = isHead ? 20 : 8;
+
+                    if (isHead) {
+                        const headGrad = ctx.createRadialGradient(
+                            sx + cell / 2 - 2, sy + cell / 2 - 2, 2,
+                            sx + cell / 2, sy + cell / 2, cell / 2
+                        );
+                        headGrad.addColorStop(0, '#88ffdd');
+                        headGrad.addColorStop(0.6, '#00f0ff');
+                        headGrad.addColorStop(1, '#0099bb');
+                        ctx.fillStyle = headGrad;
+                    } else {
+                        ctx.fillStyle = color;
+                    }
+
+                    ctx.beginPath();
+                    ctx.moveTo(x + radius, y);
+                    ctx.lineTo(x + w - radius, y);
+                    ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+                    ctx.lineTo(x + w, y + h - radius);
+                    ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+                    ctx.lineTo(x + radius, y + h);
+                    ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+                    ctx.lineTo(x, y + radius);
+                    ctx.quadraticCurveTo(x, y, x + radius, y);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    if (isHead) {
+                        ctx.shadowBlur = 0;
+                        const eyeSize = 3.5;
+                        let ex1, ey1, ex2, ey2;
+                        const dir = this.direction;
+                        if (dir.dx === 1) {
+                            ex1 = sx + cell - 7; ey1 = sy + 6;
+                            ex2 = sx + cell - 7; ey2 = sy + cell - 6;
+                        } else if (dir.dx === -1) {
+                            ex1 = sx + 7; ey1 = sy + 6;
+                            ex2 = sx + 7; ey2 = sy + cell - 6;
+                        } else if (dir.dy === -1) {
+                            ex1 = sx + 6; ey1 = sy + 7;
+                            ex2 = sx + cell - 6; ey2 = sy + 7;
+                        } else {
+                            ex1 = sx + 6; ey1 = sy + cell - 7;
+                            ex2 = sx + cell - 6; ey2 = sy + cell - 7;
+                        }
+                        ctx.fillStyle = 'rgba(10, 14, 39, 0.85)';
+                        ctx.beginPath();
+                        ctx.arc(ex1, ey1, eyeSize, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(ex2, ey2, eyeSize, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = '#ffffff';
+                        ctx.beginPath();
+                        ctx.arc(ex1 - 1, ey1 - 1.5, 1.6, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(ex2 - 1, ey2 - 1.5, 1.6, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.shadowBlur = 0;
+                }
+
+                if (this.gameOver) {
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.40)';
+                    ctx.fillRect(0, 0, W, H);
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.shadowColor = '#ff3366';
+                    ctx.shadowBlur = 40;
+                    ctx.font = 'bold 44px "Segoe UI", "PingFang SC", sans-serif';
+                    ctx.fillStyle = '#ff3366';
+                    ctx.fillText('GAME OVER', W / 2, H / 2 - 10);
+                    ctx.shadowBlur = 0;
+                    ctx.font = '18px "Segoe UI", "PingFang SC", sans-serif';
+                    ctx.fillStyle = 'rgba(255,255,255,0.60)';
+                    ctx.fillText('点击「重新开始」', W / 2, H / 2 + 48);
+                }
+            }
+
+            _generateFood() {
+                const maxAttempts = 1000;
+                for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                    const fx = Math.floor(Math.random() * this.GRID_SIZE);
+                    const fy = Math.floor(Math.random() * this.GRID_SIZE);
+                    if (!this._isOnSnake(fx, fy)) {
+                        this.food = { x: fx, y: fy };
+                        return;
+                    }
+                }
+                for (let y = 0; y < this.GRID_SIZE; y++) {
+                    for (let x = 0; x < this.GRID_SIZE; x++) {
+                        if (!this._isOnSnake(x, y)) {
+                            this.food = { x, y };
+                            return;
+                        }
+                    }
+                }
+                this.food = null;
+            }
+
+            _isOnSnake(x, y) {
+                return this.snake.some(seg => seg.x === x && seg.y === y);
+            }
+
+            _checkCollision() {
+                const head = this.snake[this.snake.length - 1];
+                if (head.x < 0 || head.x >= this.GRID_SIZE || head.y < 0 || head.y >= this.GRID_SIZE) return true;
+                for (let i = 0; i < this.snake.length - 1; i++) {
+                    if (this.snake[i].x === head.x && this.snake[i].y === head.y) return true;
+                }
+                return false;
+            }
+
+            _gameOver() {
+                if (this.gameOver) return;
+                this.gameOver = true;
+                this.isRunning = false;
+                this._stopLoop();
+                if (this.aiActive) {
+                    this.aiActive = false;
+                    this._updateAIButton();
+                }
+                this.draw();
+                setTimeout(() => {
+                    alert(`💀 游戏结束！\n\n最终得分：${this.score}`);
+                }, 60);
+            }
+
+            _updateScore() {
+                this.scoreSpan.textContent = this.score;
+                this.scoreSpan.style.transform = 'scale(1.25)';
+                setTimeout(() => {
+                    this.scoreSpan.style.transform = 'scale(1)';
+                }, 120);
+            }
+
+            _isOpposite(dir1, dir2) {
+                return (dir1.dx === -dir2.dx && dir1.dy === -dir2.dy);
+            }
+
+            // 主题管理
+            _applyTheme(theme, save = true) {
+                this.theme = theme;
+                document.body.setAttribute('data-theme', theme);
+                if (save) localStorage.setItem('snakeTheme', theme);
+                if (this.canvas) this.draw();
+            }
+
+            toggleTheme() {
+                const newTheme = this.theme === 'dark' ? 'light' : 'dark';
+                this._applyTheme(newTheme, true);
+            }
+
+            _bindEvents() {
+                document.addEventListener('keydown', (e) => {
+                    const key = e.key;
+                    if (key.startsWith('Arrow')) e.preventDefault();
+                    if (this.gameOver) return;
+                    if (this.aiActive) return;
+
+                    let newDx = 0, newDy = 0;
+                    switch (key) {
+                        case 'ArrowUp': newDy = -1; break;
+                        case 'ArrowDown': newDy = 1; break;
+                        case 'ArrowLeft': newDx = -1; break;
+                        case 'ArrowRight': newDx = 1; break;
+                        default: return;
+                    }
+                    this.forceDirection(newDx, newDy);
+                });
+
+                document.querySelectorAll('.touch-btn').forEach(btn => {
+                    const handle = (e) => {
+                        e.preventDefault();
+                        if (this.gameOver || this.aiActive) return;
+                        const dir = btn.dataset.dir;
+                        let newDx = 0, newDy = 0;
+                        switch (dir) {
+                            case 'up': newDy = -1; break;
+                            case 'down': newDy = 1; break;
+                            case 'left': newDx = -1; break;
+                            case 'right': newDx = 1; break;
+                        }
+                        this.forceDirection(newDx, newDy);
+                    };
+                    btn.addEventListener('touchstart', handle);
+                    btn.addEventListener('click', handle);
+                });
+
+                this.restartBtn.addEventListener('click', () => this.reset());
+                this.aiBtn.addEventListener('click', () => this.toggleAI());
+                this.themeToggleBtn.addEventListener('click', () => this.toggleTheme());
+
+                window.addEventListener('keydown', (e) => {
+                    if (e.key.startsWith('Arrow')) e.preventDefault();
+                }, { passive: false });
+            }
+        }
+
+        // ================================================================
+        //  启动
+        // ================================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            const game = new Game('gameCanvas', 'scoreDisplay', 'restartBtn', 'aiBtn');
+            window.__game = game;
+        });
+    </script>
+</body>
+</html>
