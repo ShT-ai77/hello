@@ -3,8 +3,48 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <title>贪吃蛇 · 科技版 + 智能AI（稳定高分）</title>
+    <title>贪吃蛇 · 科技版 + 智能AI + 主题切换</title>
     <style>
+        :root {
+            --bg-gradient: radial-gradient(ellipse at 50% 30%, #0f1a3a, #080c1a);
+            --container-bg: rgba(8, 14, 34, 0.85);
+            --container-border: rgba(0, 240, 255, 0.20);
+            --text-color: rgba(255, 255, 255, 0.70);
+            --score-color: #00f0ff;
+            --btn-restart-bg: linear-gradient(135deg, #00f0ff, #00d4a0);
+            --btn-restart-text: #0a0e27;
+            --btn-ai-bg: linear-gradient(135deg, #f0a500, #ff7b2c);
+            --btn-ai-text: #0a0e27;
+            --btn-ai-active-bg: linear-gradient(135deg, #ff4d6d, #d62828);
+            --btn-ai-active-text: #fff;
+            --canvas-bg: #0b1028;
+            --grid-line: rgba(0, 240, 255, 0.07);
+            --grid-dot: rgba(0, 240, 255, 0.10);
+            --canvas-wrapper-border: linear-gradient(135deg, rgba(0, 240, 255, 0.30), rgba(123, 220, 181, 0.15));
+            --canvas-wrapper-pseudo: linear-gradient(135deg, rgba(0, 240, 255, 0.40), rgba(123, 220, 181, 0.10));
+            --touch-btn-bg: rgba(255, 255, 255, 0.08);
+        }
+
+        [data-theme="light"] {
+            --bg-gradient: radial-gradient(ellipse at 50% 30%, #eef2f7, #d5dce6);
+            --container-bg: rgba(255, 255, 255, 0.92);
+            --container-border: rgba(0, 120, 180, 0.25);
+            --text-color: rgba(30, 40, 60, 0.85);
+            --score-color: #0077cc;
+            --btn-restart-bg: linear-gradient(135deg, #00a8cc, #00b894);
+            --btn-restart-text: #ffffff;
+            --btn-ai-bg: linear-gradient(135deg, #ffb347, #ff7e5f);
+            --btn-ai-text: #ffffff;
+            --btn-ai-active-bg: linear-gradient(135deg, #ff5e6c, #d63031);
+            --btn-ai-active-text: #ffffff;
+            --canvas-bg: #f8fafc;
+            --grid-line: rgba(0, 100, 150, 0.08);
+            --grid-dot: rgba(0, 100, 150, 0.10);
+            --canvas-wrapper-border: linear-gradient(135deg, rgba(0, 150, 200, 0.25), rgba(0, 180, 150, 0.15));
+            --canvas-wrapper-pseudo: linear-gradient(135deg, rgba(0, 150, 200, 0.35), rgba(0, 180, 150, 0.12));
+            --touch-btn-bg: rgba(0, 0, 0, 0.06);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -16,31 +56,29 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: radial-gradient(ellipse at 50% 30%, #0f1a3a, #080c1a);
+            background: var(--bg-gradient);
             font-family: 'Segoe UI', 'PingFang SC', Roboto, system-ui, sans-serif;
             user-select: none;
+            transition: background 0.3s;
         }
 
         .game-container {
-            background: rgba(8, 14, 34, 0.85);
+            background: var(--container-bg);
             backdrop-filter: blur(6px);
             padding: 32px 40px 40px;
             border-radius: 28px;
-            border: 1px solid rgba(0, 240, 255, 0.20);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 240, 255, 0.06), inset 0 0 60px rgba(0, 240, 255, 0.03);
-            transition: box-shadow 0.3s;
-        }
-
-        .game-container:hover {
-            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.9), 0 0 60px rgba(0, 240, 255, 0.10), inset 0 0 60px rgba(0, 240, 255, 0.05);
+            border: 1px solid var(--container-border);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2), 0 0 40px rgba(0, 240, 255, 0.06), inset 0 0 60px rgba(0, 240, 255, 0.03);
+            transition: box-shadow 0.3s, background 0.3s, border 0.3s;
         }
 
         .header {
             display: flex;
             justify-content: space-between;
-            align-items: baseline;
+            align-items: center;
             margin-bottom: 18px;
             padding: 0 6px;
+            gap: 10px;
         }
 
         .title {
@@ -67,8 +105,9 @@
             align-items: baseline;
             gap: 6px;
             font-size: 18px;
-            color: rgba(255, 255, 255, 0.70);
+            color: var(--text-color);
             letter-spacing: 0.5px;
+            margin-left: auto;
         }
 
         .score-label {
@@ -78,18 +117,37 @@
         .score-value {
             font-size: 28px;
             font-weight: 700;
-            color: #00f0ff;
+            color: var(--score-color);
             text-shadow: 0 0 20px rgba(0, 240, 255, 0.35);
             min-width: 40px;
             text-align: right;
             transition: all 0.15s;
         }
 
+        .theme-btn {
+            background: transparent;
+            border: 2px solid var(--score-color);
+            color: var(--score-color);
+            font-size: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .theme-btn:hover {
+            background: var(--score-color);
+            color: var(--container-bg);
+        }
+
         .canvas-wrapper {
             position: relative;
             padding: 3px;
             border-radius: 16px;
-            background: linear-gradient(135deg, rgba(0, 240, 255, 0.30), rgba(123, 220, 181, 0.15));
+            background: var(--canvas-wrapper-border);
             box-shadow: 0 0 40px rgba(0, 240, 255, 0.08);
         }
 
@@ -99,7 +157,7 @@
             inset: -2px;
             border-radius: 18px;
             padding: 2px;
-            background: linear-gradient(135deg, rgba(0, 240, 255, 0.40), rgba(123, 220, 181, 0.10));
+            background: var(--canvas-wrapper-pseudo);
             -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
             -webkit-mask-composite: xor;
             mask-composite: exclude;
@@ -111,7 +169,7 @@
             width: 500px;
             height: 500px;
             border-radius: 14px;
-            background: #0b1028;
+            background: var(--canvas-bg);
             image-rendering: pixelated;
         }
 
@@ -146,7 +204,6 @@
             opacity: 0;
             transition: opacity 0.25s;
         }
-
         .btn:hover::after {
             opacity: 1;
         }
@@ -155,8 +212,8 @@
         }
 
         #restartBtn {
-            color: #0a0e27;
-            background: linear-gradient(135deg, #00f0ff, #00d4a0);
+            color: var(--btn-restart-text);
+            background: var(--btn-restart-bg);
         }
         #restartBtn:hover {
             transform: translateY(-2px) scale(1.02);
@@ -164,23 +221,22 @@
         }
 
         #aiBtn {
-            color: #0a0e27;
-            background: linear-gradient(135deg, #f0a500, #ff7b2c);
+            color: var(--btn-ai-text);
+            background: var(--btn-ai-bg);
         }
         #aiBtn:hover {
             transform: translateY(-2px) scale(1.02);
             box-shadow: 0 8px 36px rgba(240, 165, 0, 0.35);
         }
         #aiBtn.active {
-            background: linear-gradient(135deg, #ff4d6d, #d62828);
-            color: #fff;
+            background: var(--btn-ai-active-bg);
+            color: var(--btn-ai-active-text);
             box-shadow: 0 0 30px rgba(255, 77, 109, 0.4);
         }
         #aiBtn.active:hover {
             box-shadow: 0 8px 40px rgba(255, 77, 109, 0.5);
         }
 
-        /* 移动端触摸控制 */
         .touch-controls {
             display: none;
             margin-top: 16px;
@@ -197,9 +253,9 @@
             width: 56px;
             height: 56px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.08);
-            border: 2px solid rgba(0, 240, 255, 0.4);
-            color: #00f0ff;
+            background: var(--touch-btn-bg);
+            border: 2px solid var(--score-color);
+            color: var(--score-color);
             font-size: 24px;
             display: flex;
             justify-content: center;
@@ -211,7 +267,8 @@
             touch-action: manipulation;
         }
         .touch-btn:active {
-            background: rgba(0, 240, 255, 0.3);
+            background: var(--score-color);
+            color: var(--container-bg);
             transform: scale(0.9);
         }
 
@@ -277,8 +334,7 @@
         }
     </style>
 </head>
-<body>
-
+<body data-theme="dark">
     <div class="game-container">
         <div class="header">
             <div class="title">
@@ -289,13 +345,13 @@
                 <span class="score-label">得分</span>
                 <span class="score-value" id="scoreDisplay">0</span>
             </div>
+            <button id="themeToggle" class="theme-btn" title="切换主题">🌓</button>
         </div>
 
         <div class="canvas-wrapper">
             <canvas id="gameCanvas" width="500" height="500"></canvas>
         </div>
 
-        <!-- 移动端虚拟方向键 -->
         <div class="touch-controls">
             <button class="touch-btn" data-dir="up">▲</button>
             <div class="touch-row">
@@ -313,10 +369,9 @@
 
     <script>
         // ================================================================
-        //  AIController 类 —— 核心算法（已移除冗余缓存，优化安全性）
+        //  AIController 类 —— 核心算法（完整版）
         // ================================================================
         class AIController {
-
             constructor(game) {
                 this.game = game;
                 this.GRID_SIZE = game.GRID_SIZE;
@@ -329,9 +384,6 @@
                 this.lastLog = '';
             }
 
-            /**
-             * 主决策入口：返回下一步方向 {dx, dy} 或 null
-             */
             getNextDirection() {
                 const snake = this.game.snake;
                 const head = snake[snake.length - 1];
@@ -352,7 +404,6 @@
                         this._log('目标：安全吃果');
                         return firstDir;
                     }
-                    // 尝试替代路径（排除第一步）
                     const altDir = this._findAlternativeToFood(head, food, snake, firstDir);
                     if (altDir) {
                         const altHead = { x: head.x + altDir.dx, y: head.y + altDir.dy };
@@ -365,14 +416,14 @@
                     }
                 }
 
-                // 2. 追踪蛇尾（保持空间）
+                // 2. 追踪蛇尾
                 const tailDir = this._bfsToTail(head, snake);
                 if (tailDir) {
                     this._log('目标：尾随保命');
                     return tailDir;
                 }
 
-                // 3. 选择可达空间最大的方向
+                // 3. 选择最大空间方向
                 const spaceDir = this._maxSpaceDirection(head, snake);
                 if (spaceDir) {
                     this._log('目标：最大空间');
@@ -383,14 +434,9 @@
                 return null;
             }
 
-            /**
-             * BFS 寻找从蛇头到食物的完整路径（考虑蛇身移动）
-             * 返回方向数组（第一步方向在索引0），若不可达返回null
-             */
             _bfsToFood(head, food, snake) {
                 const size = this.GRID_SIZE;
                 const startKey = `${head.x},${head.y}`;
-
                 const queue = [];
                 const visited = new Set();
                 visited.add(startKey);
@@ -415,7 +461,6 @@
                         ns.push(nh);
                         if (!ate) ns.shift();
 
-                        // 检测新蛇头是否撞到新蛇身（尾部除外）
                         let collision = false;
                         for (let i = 0; i < ns.length - 1; i++) {
                             if (ns[i].x === nh.x && ns[i].y === nh.y) {
@@ -435,13 +480,9 @@
                         });
                     }
                 }
-
                 return null;
             }
 
-            /**
-             * 寻找替代路径：排除某个第一步方向后重新BFS
-             */
             _findAlternativeToFood(head, food, snake, excludedDir) {
                 const size = this.GRID_SIZE;
                 for (const d of this.DIRS) {
@@ -461,9 +502,6 @@
                 return null;
             }
 
-            /**
-             * BFS 从蛇头到蛇尾（蛇尾位置可通行），返回第一步方向
-             */
             _bfsToTail(head, snake) {
                 const size = this.GRID_SIZE;
                 const tail = snake[0];
@@ -503,9 +541,6 @@
                 return null;
             }
 
-            /**
-             * 检查从蛇头能否到达蛇尾（BFS，蛇尾可通行）
-             */
             _canReachTail(snake) {
                 const head = snake[snake.length - 1];
                 const tail = snake[0];
@@ -541,9 +576,6 @@
                 return false;
             }
 
-            /**
-             * 模拟蛇移动一步
-             */
             _simulateStep(snake, newHead, ateFood) {
                 const ns = snake.map(s => ({ x: s.x, y: s.y }));
                 ns.push(newHead);
@@ -551,10 +583,6 @@
                 return ns;
             }
 
-            /**
-             * 简单安全检测（不撞墙、不撞蛇身，蛇尾可通行取决于 willEat）
-             * willEat = true 时蛇尾不可通行（因为长度会增加），false 时蛇尾可通行
-             */
             _isSafeSimple(newHead, snake, willEat = false) {
                 const size = this.GRID_SIZE;
                 if (newHead.x < 0 || newHead.x >= size || newHead.y < 0 || newHead.y >= size) return false;
@@ -565,16 +593,11 @@
                 return true;
             }
 
-            /**
-             * 选择可达空间最大的方向
-             */
             _maxSpaceDirection(head, snake) {
                 let bestSpace = -1;
                 let bestDir = null;
-
                 for (const d of this.DIRS) {
                     const nh = { x: head.x + d.dx, y: head.y + d.dy };
-                    // 默认模拟未吃到食物，蛇尾可移动
                     if (!this._isSafeSimple(nh, snake, false)) continue;
                     const simSnake = this._simulateStep(snake, nh, false);
                     const space = this._countReachable(nh, simSnake);
@@ -586,9 +609,6 @@
                 return bestDir;
             }
 
-            /**
-             * BFS 计算从 start 出发的可达格子数（用于空间评估）
-             */
             _countReachable(start, snakeBody) {
                 const size = this.GRID_SIZE;
                 const snakeSet = new Set();
@@ -620,9 +640,6 @@
                 return count;
             }
 
-            /**
-             * 日志去重
-             */
             _log(msg) {
                 if (this.lastLog !== msg) {
                     console.log(`[AI] ${msg}`);
@@ -633,16 +650,16 @@
 
 
         // ================================================================
-        //  Game 类（改进：AI决策同步至游戏循环，防掉头，触摸控制）
+        //  Game 类（加入主题管理）
         // ================================================================
         class Game {
-
             constructor(canvasId, scoreId, restartBtnId, aiBtnId) {
                 this.canvas = document.getElementById(canvasId);
                 this.ctx = this.canvas.getContext('2d');
                 this.scoreSpan = document.getElementById(scoreId);
                 this.restartBtn = document.getElementById(restartBtnId);
                 this.aiBtn = document.getElementById(aiBtnId);
+                this.themeToggleBtn = document.getElementById('themeToggle');
 
                 this.GRID_SIZE = 20;
                 this.CELL_SIZE = 25;
@@ -663,19 +680,16 @@
                 this.loopTimer = null;
                 this.INTERVAL_MS = 145;
 
+                // 主题初始化
+                this.theme = localStorage.getItem('snakeTheme') || 'dark';
+                this._applyTheme(this.theme, false);
+
                 this._bindEvents();
                 this.reset();
             }
 
-            /**
-             * 设置下一个方向（由AI调用或触摸/键盘调用）
-             * 添加防掉头检查
-             */
             forceDirection(dx, dy) {
-                // 禁止掉头
-                if (dx === -this.direction.dx && dy === -this.direction.dy) {
-                    return;
-                }
+                if (dx === -this.direction.dx && dy === -this.direction.dy) return;
                 this.nextDirection = { dx, dy };
             }
 
@@ -685,27 +699,22 @@
                     return;
                 }
                 this.aiActive = !this.aiActive;
+                this._updateAIButton();
+            }
+
+            _updateAIButton() {
                 if (this.aiActive) {
-                    this._startAI();
+                    this.aiBtn.textContent = '⏹ 停止AI';
+                    this.aiBtn.classList.add('active');
                 } else {
-                    this._stopAI();
+                    this.aiBtn.textContent = '🤖 AI自动玩';
+                    this.aiBtn.classList.remove('active');
                 }
             }
 
-            _startAI() {
-                // AI决策将在游戏循环中同步进行，无需额外定时器
-                this.aiBtn.textContent = '⏹ 停止AI';
-                this.aiBtn.classList.add('active');
-            }
-
-            _stopAI() {
-                this.aiActive = false;
-                this.aiBtn.textContent = '🤖 AI自动玩';
-                this.aiBtn.classList.remove('active');
-            }
-
             reset() {
-                this._stopAI();
+                this.aiActive = false;
+                this._updateAIButton();
                 this._stopLoop();
 
                 this.gameOver = false;
@@ -746,16 +755,11 @@
             }
 
             _update() {
-                // AI激活时，在每次移动前获取方向
                 if (this.aiActive && !this.gameOver) {
                     const aiDir = this.aiController.getNextDirection();
-                    if (aiDir) {
-                        // 通过forceDirection设置（内部会防掉头）
-                        this.forceDirection(aiDir.dx, aiDir.dy);
-                    }
+                    if (aiDir) this.forceDirection(aiDir.dx, aiDir.dy);
                 }
 
-                // 方向更新：AI激活时直接使用nextDirection（已防掉头）
                 if (this.aiActive) {
                     this.direction = { ...this.nextDirection };
                 } else {
@@ -779,14 +783,10 @@
                     this.score += 1;
                     this._updateScore();
                     this._generateFood();
-                    if (!this.food) {
-                        this._generateFood();
-                    }
+                    if (!this.food) this._generateFood();
                 }
 
-                if (this._checkCollision()) {
-                    this._gameOver();
-                }
+                if (this._checkCollision()) this._gameOver();
             }
 
             draw() {
@@ -795,11 +795,14 @@
                 const H = this.canvas.height;
                 const cell = this.CELL_SIZE;
                 const grid = this.GRID_SIZE;
+                const isDark = this.theme === 'dark';
 
-                ctx.fillStyle = '#0b1028';
+                // 背景
+                ctx.fillStyle = isDark ? '#0b1028' : '#f8fafc';
                 ctx.fillRect(0, 0, W, H);
 
-                ctx.strokeStyle = 'rgba(0, 240, 255, 0.07)';
+                // 网格线
+                ctx.strokeStyle = isDark ? 'rgba(0, 240, 255, 0.07)' : 'rgba(0, 100, 150, 0.08)';
                 ctx.lineWidth = 0.8;
                 for (let i = 0; i <= grid; i++) {
                     const pos = i * cell;
@@ -813,7 +816,8 @@
                     ctx.stroke();
                 }
 
-                ctx.fillStyle = 'rgba(0, 240, 255, 0.10)';
+                // 网格点
+                ctx.fillStyle = isDark ? 'rgba(0, 240, 255, 0.10)' : 'rgba(0, 100, 150, 0.10)';
                 for (let i = 0; i <= grid; i++) {
                     for (let j = 0; j <= grid; j++) {
                         ctx.beginPath();
@@ -822,6 +826,7 @@
                     }
                 }
 
+                // 食物
                 if (this.food) {
                     const fx = this.food.x * cell + cell / 2;
                     const fy = this.food.y * cell + cell / 2;
@@ -851,6 +856,7 @@
                     ctx.fill();
                 }
 
+                // 蛇
                 const len = this.snake.length;
                 for (let i = 0; i < len; i++) {
                     const seg = this.snake[i];
@@ -904,25 +910,17 @@
                         let ex1, ey1, ex2, ey2;
                         const dir = this.direction;
                         if (dir.dx === 1) {
-                            ex1 = sx + cell - 7;
-                            ey1 = sy + 6;
-                            ex2 = sx + cell - 7;
-                            ey2 = sy + cell - 6;
+                            ex1 = sx + cell - 7; ey1 = sy + 6;
+                            ex2 = sx + cell - 7; ey2 = sy + cell - 6;
                         } else if (dir.dx === -1) {
-                            ex1 = sx + 7;
-                            ey1 = sy + 6;
-                            ex2 = sx + 7;
-                            ey2 = sy + cell - 6;
+                            ex1 = sx + 7; ey1 = sy + 6;
+                            ex2 = sx + 7; ey2 = sy + cell - 6;
                         } else if (dir.dy === -1) {
-                            ex1 = sx + 6;
-                            ey1 = sy + 7;
-                            ex2 = sx + cell - 6;
-                            ey2 = sy + 7;
+                            ex1 = sx + 6; ey1 = sy + 7;
+                            ex2 = sx + cell - 6; ey2 = sy + 7;
                         } else {
-                            ex1 = sx + 6;
-                            ey1 = sy + cell - 7;
-                            ex2 = sx + cell - 6;
-                            ey2 = sy + cell - 7;
+                            ex1 = sx + 6; ey1 = sy + cell - 7;
+                            ex2 = sx + cell - 6; ey2 = sy + cell - 7;
                         }
                         ctx.fillStyle = 'rgba(10, 14, 39, 0.85)';
                         ctx.beginPath();
@@ -986,13 +984,9 @@
 
             _checkCollision() {
                 const head = this.snake[this.snake.length - 1];
-                if (head.x < 0 || head.x >= this.GRID_SIZE || head.y < 0 || head.y >= this.GRID_SIZE) {
-                    return true;
-                }
+                if (head.x < 0 || head.x >= this.GRID_SIZE || head.y < 0 || head.y >= this.GRID_SIZE) return true;
                 for (let i = 0; i < this.snake.length - 1; i++) {
-                    if (this.snake[i].x === head.x && this.snake[i].y === head.y) {
-                        return true;
-                    }
+                    if (this.snake[i].x === head.x && this.snake[i].y === head.y) return true;
                 }
                 return false;
             }
@@ -1003,7 +997,8 @@
                 this.isRunning = false;
                 this._stopLoop();
                 if (this.aiActive) {
-                    this._stopAI();
+                    this.aiActive = false;
+                    this._updateAIButton();
                 }
                 this.draw();
                 setTimeout(() => {
@@ -1023,40 +1018,39 @@
                 return (dir1.dx === -dir2.dx && dir1.dy === -dir2.dy);
             }
 
+            // 主题管理
+            _applyTheme(theme, save = true) {
+                this.theme = theme;
+                document.body.setAttribute('data-theme', theme);
+                if (save) localStorage.setItem('snakeTheme', theme);
+                if (this.canvas) this.draw();
+            }
+
+            toggleTheme() {
+                const newTheme = this.theme === 'dark' ? 'light' : 'dark';
+                this._applyTheme(newTheme, true);
+            }
+
             _bindEvents() {
-                // 键盘事件
                 document.addEventListener('keydown', (e) => {
                     const key = e.key;
-                    if (key.startsWith('Arrow')) {
-                        e.preventDefault();
-                    }
+                    if (key.startsWith('Arrow')) e.preventDefault();
                     if (this.gameOver) return;
                     if (this.aiActive) return;
 
-                    let newDx = 0,
-                        newDy = 0;
+                    let newDx = 0, newDy = 0;
                     switch (key) {
-                        case 'ArrowUp':
-                            newDy = -1;
-                            break;
-                        case 'ArrowDown':
-                            newDy = 1;
-                            break;
-                        case 'ArrowLeft':
-                            newDx = -1;
-                            break;
-                        case 'ArrowRight':
-                            newDx = 1;
-                            break;
-                        default:
-                            return;
+                        case 'ArrowUp': newDy = -1; break;
+                        case 'ArrowDown': newDy = 1; break;
+                        case 'ArrowLeft': newDx = -1; break;
+                        case 'ArrowRight': newDx = 1; break;
+                        default: return;
                     }
                     this.forceDirection(newDx, newDy);
                 });
 
-                // 触摸按钮事件
                 document.querySelectorAll('.touch-btn').forEach(btn => {
-                    btn.addEventListener('touchstart', (e) => {
+                    const handle = (e) => {
                         e.preventDefault();
                         if (this.gameOver || this.aiActive) return;
                         const dir = btn.dataset.dir;
@@ -1068,35 +1062,17 @@
                             case 'right': newDx = 1; break;
                         }
                         this.forceDirection(newDx, newDy);
-                    });
-                    // 同时也支持鼠标点击（便于调试）
-                    btn.addEventListener('click', (e) => {
-                        if (this.gameOver || this.aiActive) return;
-                        const dir = btn.dataset.dir;
-                        let newDx = 0, newDy = 0;
-                        switch (dir) {
-                            case 'up': newDy = -1; break;
-                            case 'down': newDy = 1; break;
-                            case 'left': newDx = -1; break;
-                            case 'right': newDx = 1; break;
-                        }
-                        this.forceDirection(newDx, newDy);
-                    });
+                    };
+                    btn.addEventListener('touchstart', handle);
+                    btn.addEventListener('click', handle);
                 });
 
-                this.restartBtn.addEventListener('click', () => {
-                    this.reset();
-                });
+                this.restartBtn.addEventListener('click', () => this.reset());
+                this.aiBtn.addEventListener('click', () => this.toggleAI());
+                this.themeToggleBtn.addEventListener('click', () => this.toggleTheme());
 
-                this.aiBtn.addEventListener('click', () => {
-                    this.toggleAI();
-                });
-
-                // 阻止页面在方向键上滚动
                 window.addEventListener('keydown', (e) => {
-                    if (e.key.startsWith('Arrow')) {
-                        e.preventDefault();
-                    }
+                    if (e.key.startsWith('Arrow')) e.preventDefault();
                 }, { passive: false });
             }
         }
@@ -1109,6 +1085,5 @@
             window.__game = game;
         });
     </script>
-
 </body>
 </html>
