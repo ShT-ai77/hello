@@ -2,7 +2,7 @@
 # =====================================================================
 # 考核任务③：NMOS 共源级放大电路（PySpice 仿真）—— 参数按题卡固定，不做修改
 # ---------------------------------------------------------------------
-# 固定参数：VDD=5V, Rg1=60kΩ, Rg2=40kΩ, Rd=2kΩ, Cb1 视为足够大(取100µF)
+# 固定参数：VDD=5V, Rg1=60kΩ, Rg2=40kΩ, Rd=2kΩ, Cb1 视为足够大(取100nF)
 #          NMOS：K=0.8mA/V², V_th=1V, λ=0.02/V；输入 Vi=10mV/1kHz 正弦波
 # 电路连接：VDD -> Rd -> 漏极 d（输出 vO）；VDD -> Rg1 -> 栅极 g；栅极 g -> Rg2 -> 地；
 #          输入 Vi -> Cb1 -> 栅极 g（隔直耦合）；源极 s 接地，衬底 B 接源极（共源组态）
@@ -15,7 +15,8 @@
 # 手算小信号（微变等效电路）：
 #   跨导公式：gm = 2K(V_GS - V_th) = 2 × 0.8m × 1 = 1.6 mS
 #   增益公式（忽略 λ）：Av = -gm·Rd = -1.6m × 2k = -3.2（负号=反相放大）
-#   （若计 λ：ro = 1/(λ·I_D) = 62.5kΩ，Av = -gm·(Rd∥ro) ≈ -3.10，与仿真更接近）
+#   【修正】若计 λ（与仿真更接近）：I_D 需迭代，ro = 1/(λ·I_D) = 1/(0.02×0.853m) ≈ 58.6 kΩ，
+#           Av = -gm·(Rd∥ro) ≈ -3.30
 # 运行输出：task3_transient.png（输入/输出波形）、task3_bode.png（幅频特性）+ 控制台数据摘要
 # =====================================================================
 
@@ -32,7 +33,12 @@ VDD = 5.0                                      # 电源电压 VDD = 5 V（题卡
 RG1 = 60e3                                     # 上分压电阻 Rg1 = 60 kΩ（题卡固定）
 RG2 = 40e3                                     # 下分压电阻 Rg2 = 40 kΩ（题卡固定）
 RD = 2e3                                       # 漏极电阻 Rd = 2 kΩ（题卡固定）
-CB1 = 100e-6                                   # 耦合电容 Cb1 = 100 µF（题卡"足够大"，取大值近似短路）
+# 【修正】耦合电容取值说明（题卡"足够大"的真正含义）：
+#   "足够大"= 对 1kHz 信号近似短路，判定标准是容抗 X_C 远小于输入电阻 Rg1∥Rg2=24kΩ。
+#   100nF 时 X_C@1kHz = 1/(2π·1k·100n) ≈ 1.6kΩ ≪ 24kΩ，已满足"近似短路"（信号损失仅 0.2%）。
+#   若取 100µF，虽交流短路更彻底，但时间常数 τ=Cb1·(Rg1∥Rg2)=100µ×24k=2.4s，
+#   栅极偏置在几毫秒内根本建立不起来，MOS 会一直处于截止，瞬态波形完全错误。
+CB1 = 100e-9                                   # 耦合电容 Cb1 = 100 nF（题卡"足够大"，容抗≪输入电阻即可；兼顾瞬态建立时间）
 K = 0.8e-3                                     # MOS 工艺参数 K = 0.8 mA/V²（题卡固定，饱和区 I_D=K(V_GS-V_th)²）
 VTH = 1.0                                      # 开启电压 V_th = 1 V（题卡固定）
 LAMBDA = 0.02                                  # 沟道长度调制系数 λ = 0.02 /V（题卡固定，影响输出电阻 ro）
@@ -55,7 +61,7 @@ circuit.V('dd', 'vdd', circuit.gnd, VDD @ u_V)                       # 电源 VD
 circuit.R('g1', 'vdd', 'gate', RG1 @ u_Ohm)                          # Rg1：从 VDD 到栅极（上分压电阻）
 circuit.R('g2', 'gate', circuit.gnd, RG2 @ u_Ohm)                    # Rg2：从栅极到地（下分压电阻）
 circuit.R('d', 'vdd', 'drain', RD @ u_Ohm)                           # Rd：从 VDD 到漏极（把电流变化转为电压变化）
-circuit.C('b1', 'vin', 'gate', CB1 @ u_F)                             # 耦合电容 Cb1：输入经它隔直后耦合到栅极（"通交流、阻直流"），节点名用 vin
+circuit.C('b1', 'vin', 'gate', CB1 @ u_F)                             # 耦合电容 Cb1=100nF（CB1 存法拉值，@u_F 即法拉单位）：输入经它隔直后耦合到栅极（"通交流、阻直流"）
 # 输入源：SIN(直流偏置 幅度 频率) = 10mV/1kHz 正弦；末尾 "AC 1" 表示交流小信号分析时输入置 1，输出即增益
 circuit.V('in', 'vin', circuit.gnd, 'SIN(0 10m 1k) AC 1')             # 节点名用 vin（in 是 Python 关键字，PySpice 会警告）
 circuit.M('1', 'drain', 'gate', circuit.gnd, circuit.gnd, model='NMOS_K')  # NMOS：漏极/栅极/源极/衬底；源极接地、衬底接源极（共源组态）
@@ -72,16 +78,18 @@ sat_ok = v_ds_sim > vov_sim                    # 饱和区判断条件：V_DS > 
 ro_sim = 1 / (LAMBDA * i_d_sim)                # 输出电阻公式：ro = 1/(λ·I_D)（计及沟道长度调制效应）
 
 # ---------------- 4. 瞬态分析：看输入/输出波形（反相放大），测实际增益 ----------------
-tran = simulator.transient(step_time=1 @ u_us, end_time=5 @ u_ms)   # 瞬态分析：步长 1µs，共 5ms（5 个信号周期）
+# 【修正】仿真时长取 20ms：Cb1 与 Rg1∥Rg2 组成时间常数 τ = 100nF×24k = 2.4ms，
+#         20ms ≈ 8τ，栅极偏置已充分建立（充到 99.9%），避免"耦合电容还在充电、MOS 未导通"的假象。
+tran = simulator.transient(step_time=1 @ u_us, end_time=20 @ u_ms)   # 瞬态分析：步长 1µs，共 20ms（20 个信号周期）
 t = np.array(tran.time)                        # 时间轴数组
 v_in_t = np.array(tran['vin'])                  # 输入电压波形 v_i(t)（10mV 正弦），节点名 vin
 v_out_t = np.array(tran['drain'])              # 输出电压波形 v_o(t)（漏极电位）
 
-steady = t >= 3e-3                             # 取 3ms 之后（已到稳态，避开起振阶段）
+steady = t >= 15e-3                            # 【修正】取 15ms 之后（≈6τ，栅极偏置已建立 99%+，避开耦合电容充电暂态）
 vin_s, vout_s = v_in_t[steady], v_out_t[steady]           # 稳态段的输入与输出波形
 ts = t[steady]                                 # 稳态段对应的时间轴
 amp_in = (vin_s.max() - vin_s.min()) / 2       # 峰峰值折半 = 输入幅度（≈10mV）
-amp_out = (vout_s.max() - vout_s.min()) / 2    # 峰峰值折半 = 输出幅度（≈30mV）
+amp_out = (vout_s.max() - vout_s.min()) / 2    # 峰峰值折半 = 输出幅度（≈33mV）
 i_pk = int(np.argmax(vin_s))                   # 找输入正峰时刻
 inverted = vout_s[i_pk] < vout_s.mean()        # 输入为正峰时输出低于均值 → 输出反相（共源放大特性）
 av_tran = -(amp_out / amp_in) if inverted else (amp_out / amp_in)  # 增益公式：Av = v_o/v_i（反相取负号）
@@ -90,11 +98,11 @@ gm_sim = abs(av_tran) / (RD * ro_sim / (RD + ro_sim))      # 跨导反推公式�
 
 # 画瞬态波形图（上下两个子图，突出反相关系）并保存
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9, 6.5), sharex=True)  # 2 行 1 列共享 x 轴
-ax1.plot(t * 1e3, v_in_t * 1e3, 'b-', lw=1.8)  # 输入波形（纵轴换算成 mV）
+ax1.plot(ts * 1e3, vin_s * 1e3, 'b-', lw=1.8)   # 【修正】只画稳态段输入（纵轴换算成 mV，波形更清晰）
 ax1.set_ylabel('v_i (mV)')                     # y 轴标签
 ax1.set_title('任务③ 共源放大：输入 10mV/1kHz（上）与输出（下）—— 输出反相且放大')  # 标题
 ax1.grid(alpha=0.3)                            # 网格
-ax2.plot(t * 1e3, v_out_t, 'r-', lw=1.8)       # 输出波形（画完整 5ms，稳态后幅度用于测增益）
+ax2.plot(ts * 1e3, vout_s, 'r-', lw=1.8)       # 【修正】只画稳态段输出（直流基线已稳定在静态 V_DS 附近，便于对齐虚线）
 ax2.axhline(v_ds_sim, color='gray', ls='--', lw=1, label='静态 V_DS=%.3f V' % v_ds_sim)  # 标静态工作点电平
 ax2.set_xlabel('时间 t (ms)')                  # x 轴标签
 ax2.set_ylabel('v_o (V)')                      # y 轴标签
@@ -106,7 +114,7 @@ plt.savefig('task3_transient.png', dpi=150)    # 保存瞬态波形 png
 # ---------------- 5. 交流小信号分析：测 1kHz 增益并画幅频特性 ----------------
 # 【重要】交流小信号分析的物理约定：
 #   —— 此处直流电源接地：交流分析中 SPICE 自动把 VDD 直流源置零（交流接地），电路在静态工作点附近线性化；
-#   —— 此处电容视为短路：Cb1 足够大，容抗 X_C=1/(2πfC) 在 1kHz 时≈0.3Ω，近似短路（耦合电容"通交流"）
+#   —— 此处电容视为短路：Cb1 足够大，容抗 X_C=1/(2πfC) 在 1kHz 时≈1.6kΩ ≪ 输入电阻 24kΩ，近似短路（耦合电容"通交流"）
 # 微变等效模型：栅极=电压控制电流源 gm·v_gs（栅极输入阻抗无穷大），漏极经 ro 与 Rd 并联到交流地
 ac = simulator.ac(variation='dec', number_of_points=20,             # 交流扫频：每十倍频 20 点
                   start_frequency=10 @ u_Hz, stop_frequency=100 @ u_MHz)  # 范围 10Hz~100MHz
@@ -118,10 +126,10 @@ av_ac = float(gain_ac[idx1k])                  # 1kHz 处仿真增益（计及 �
 plt.figure(figsize=(9, 5))                     # 新建画布
 plt.semilogx(freq, 20 * np.log10(gain_ac), 'b-', lw=2)                     # 幅频特性（dB）
 plt.axhline(20 * np.log10(av_ac), color='gray', ls=':', lw=1,             # 标出 1kHz 处增益水平线
-            label='1kHz 增益 ≈ %.2f（%.1f dB）' % (av_ac, 20 * np.log10(av_ac)))
+            label='1kHz 增益 ≈ -%.2f（%.1f dB）' % (av_ac, 20 * np.log10(av_ac)))
 plt.xlabel('频率 f (Hz)')                      # x 轴标签
 plt.ylabel('增益 |Av| (dB)')                   # y 轴标签
-plt.title('任务③ 共源放大幅频特性：中频 Av = -gm·(Rd∥ro) ≈ %.2f（反相）' % av_ac)   # 标题
+plt.title('任务③ 共源放大幅频特性：中频 Av = -gm·(Rd∥ro) ≈ -%.2f（反相）' % av_ac)   # 【修正】标题加负号，与"反相"一致
 plt.legend()                                   # 图例
 plt.grid(alpha=0.3, which='both')              # 主次网格
 plt.tight_layout()                             # 调整布局
