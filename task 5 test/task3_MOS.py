@@ -52,6 +52,15 @@ vds_th = VDD - id_th * RD                      # 输出回路 KVL：V_DS = VDD -
 gm_th = 2 * K * (vgs_th - VTH)                 # 跨导公式：gm = 2K(V_GS-V_th) = 1.6 mS
 av_th = -gm_th * RD                            # 增益公式：Av = -gm·Rd = -3.2（忽略 λ 的手算值）
 
+# 【修正】计 λ 的手算口径（与仿真对比用）：I_D 与 V_DS 互相依赖需迭代，gm 也要带 (1+λV_DS) 修正
+id_lam = K * (vgs_th - VTH) ** 2               # 迭代初值：先用忽略 λ 的电流公式
+for _ in range(20):                            # 迭代 20 次充分收敛：每次把上一步的 V_DS 代回电流公式
+    vds_lam = VDD - id_lam * RD                # 输出回路 KVL：V_DS = VDD - I_D·Rd
+    id_lam = K * (vgs_th - VTH) ** 2 * (1 + LAMBDA * vds_lam)  # 饱和区电流公式（含 λ 修正因子 1+λV_DS）
+gm_lam = 2 * K * (vgs_th - VTH) * (1 + LAMBDA * vds_lam)       # 计 λ 跨导：gm = 2K·V_OV·(1+λV_DS)
+ro_lam = 1 / (LAMBDA * id_lam)                 # 计 λ 输出电阻：ro = 1/(λ·I_D)
+av_lam = -gm_lam * (RD * ro_lam / (RD + ro_lam))               # 计 λ 增益：Av = -gm·(Rd∥ro)（应≈仿真值）
+
 # ---------------- 2. 搭建共源放大电路网表 ----------------
 circuit = Circuit('NMOS 共源放大电路')          # 创建网表对象
 # MOS 模型卡：SPICE level-1 模型中 I_D = (KP/2)·(W/L)·(V_GS-V_to)²·(1+λ·V_DS)，
@@ -141,17 +150,17 @@ print('任务③ NMOS 共源放大 —— 手算 vs 仿真 数据摘要（题卡
 print('=' * 66)                                # 分隔线
 print('静态工作点')                            # 小节标题
 print('  V_GS：手算 %.4f V，仿真 %.4f V（栅极无电流，分压公式 V_G=VDD·Rg2/(Rg1+Rg2)）' % (vgs_th, v_gs_sim))  # V_GS 对比
-print('  I_D ：手算 %.4f mA，仿真 %.4f mA（仿真偏大因含沟道长度调制 I_D=K(V_OV)²(1+λV_DS)）' % (id_th * 1e3, i_d_sim * 1e3))  # I_D 对比
-print('  V_DS：手算 %.4f V，仿真 %.4f V（输出回路 KVL：V_DS=VDD-I_D·Rd）' % (vds_th, v_ds_sim))  # V_DS 对比
+print('  I_D ：手算(忽略λ) %.4f mA，手算(计λ) %.4f mA，仿真 %.4f mA（计λ需迭代 I_D=K(V_OV)²(1+λV_DS)）' % (id_th * 1e3, id_lam * 1e3, i_d_sim * 1e3))  # 【修正】I_D 对比补计λ口径
+print('  V_DS：手算(忽略λ) %.4f V，手算(计λ) %.4f V，仿真 %.4f V（输出回路 KVL：V_DS=VDD-I_D·Rd）' % (vds_th, vds_lam, v_ds_sim))  # 【修正】V_DS 对比补计λ口径
 print('  饱和区判断：V_DS=%.3f V %s V_GS-V_th=%.3f V → %s' %
       (v_ds_sim, '>' if sat_ok else '<=', vov_sim, '工作在饱和区 ✔' if sat_ok else '未饱和 ✘'))  # 饱和判断
 print('-' * 66)                                # 分隔线
 print('小信号参数')                            # 小节标题
-print('  gm ：手算 %.4f mS，仿真 %.4f mS（跨导公式 gm=2K(V_GS-V_th)；仿真值由 |Av|/(Rd∥ro) 反推）' %
-      (gm_th * 1e3, gm_sim * 1e3))              # 跨导对比
-print('  ro ：计 λ 理论 %.2f kΩ（ro=1/(λ·I_D)，忽略 λ 时 ro→∞）' % (ro_sim / 1e3))  # 输出电阻
+print('  gm ：手算(忽略λ) %.4f mS，手算(计λ) %.4f mS，仿真 %.4f mS（gm=2K(V_GS-V_th)；仿真值由 |Av|/(Rd∥ro) 反推）' %
+      (gm_th * 1e3, gm_lam * 1e3, gm_sim * 1e3))              # 【修正】跨导对比补计λ口径
+print('  ro ：手算(计λ) %.2f kΩ（ro=1/(λ·I_D)，忽略 λ 时 ro→∞）' % (ro_lam / 1e3))  # 输出电阻
 print('  Av ：手算(忽略λ) %.3f，手算(计λ) %.3f，瞬态仿真 %.3f，交流仿真 %.3f' %
-      (av_th, -gm_th * (RD * ro_sim / (RD + ro_sim)), av_tran, -av_ac))           # 增益四方对比
+      (av_th, av_lam, av_tran, -av_ac))           # 【修正】"手算(计λ)"改用 gm、ro 都计 λ 的自洽口径（原为 gm 忽略λ、ro 计λ 的混合口径，得 -3.094 偏低）
 print('-' * 66)                                # 分隔线
 print('波形：输出幅度 %.2f mV / 输入 %.2f mV，输出与输入反相（共源放大"反相器"特性）' %
       (amp_out * 1e3, amp_in * 1e3))            # 波形测量结论
