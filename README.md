@@ -51,7 +51,7 @@
 分支（branch）是代码的一条独立开发线，可以在分支上改动而不影响主版本。
 合并（merge）是把分支上的改动合回主线。我开发任务五时建了独立分支来改，最后用 merge 合回 main。
 
-本仓库共 **25 次 commit**（含 2 次 merge 提交），体现了"一步步做出来"的过程。
+本仓库共 **26 次 commit**（含 2 次 merge 提交），体现了"一步步做出来"的过程。
 
 ### 3.2 命令行常用命令
 
@@ -150,10 +150,10 @@ inverted = vout_s[i_pk] < vout_s.mean()
 
 ## 五、进阶挑战 · PySpice 三个电路
 
-三个 `.py` 源文件位于 `task 5 test/` 目录，运行方式：
+三个 `.py` 源文件位于 `task5_test/` 目录，运行方式：
 
 ```bash
-cd "task 5 test"
+cd task5_test
 pip install PySpice numpy matplotlib
 python task1_RC.py
 python task2_thevenin2.py

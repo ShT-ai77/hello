@@ -28,6 +28,9 @@ from PySpice.Unit import *                     # 导入单位系统：直接用 
 plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei']  # 设置中文字体防止乱码
 plt.rcParams['axes.unicode_minus'] = False                       # 修复负号显示问题
 
+# 【开关】是否生成/保存波形图：False=只打印数据摘要（运行后不留图）；True=生成 png 并弹窗查看
+SAVE_FIG = False
+
 # ---------------- 1. 电路参数（题卡固定，绝对不改） ----------------
 VDD = 5.0                                      # 电源电压 VDD = 5 V（题卡固定）
 RG1 = 60e3                                     # 上分压电阻 Rg1 = 60 kΩ（题卡固定）
@@ -118,7 +121,7 @@ ax2.set_ylabel('v_o (V)')                      # y 轴标签
 ax2.legend()                                   # 图例
 ax2.grid(alpha=0.3)                            # 网格
 plt.tight_layout()                             # 调整布局
-plt.savefig('task3_transient.png', dpi=150)    # 保存瞬态波形 png
+if SAVE_FIG: plt.savefig('task3_transient.png', dpi=150)    # 【开关控制】SAVE_FIG=True 时才保存瞬态波形 png
 
 # ---------------- 5. 交流小信号分析：测 1kHz 增益并画幅频特性 ----------------
 # 【重要】交流小信号分析的物理约定：
@@ -142,7 +145,7 @@ plt.title('任务③ 共源放大幅频特性：中频 Av = -gm·(Rd∥ro) ≈ -
 plt.legend()                                   # 图例
 plt.grid(alpha=0.3, which='both')              # 主次网格
 plt.tight_layout()                             # 调整布局
-plt.savefig('task3_bode.png', dpi=150)         # 保存幅频特性 png
+if SAVE_FIG: plt.savefig('task3_bode.png', dpi=150)         # 【开关控制】SAVE_FIG=True 时才保存幅频特性 png
 
 # ---------------- 6. 打印数据摘要：手算 vs 仿真 对比表 ----------------
 print('=' * 66)                                # 分隔线
@@ -165,4 +168,4 @@ print('-' * 66)                                # 分隔线
 print('波形：输出幅度 %.2f mV / 输入 %.2f mV，输出与输入反相（共源放大"反相器"特性）' %
       (amp_out * 1e3, amp_in * 1e3))            # 波形测量结论
 
-plt.show()                                     # 弹出图窗（已先保存 png）
+if SAVE_FIG: plt.show()                                     # 【开关控制】SAVE_FIG=True 时才弹出图窗

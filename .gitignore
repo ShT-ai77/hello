@@ -62,4 +62,7 @@ __pycache__/
 .workbuddy/
 
 # 仿真脚本运行输出的波形图（正式图片统一放在 images/ 目录）
-task 5 test/*.png
+task5_test/*.png
+
+# 从仓库根目录运行脚本时输出的波形图（同样属于运行产物，不提交）
+/*.png

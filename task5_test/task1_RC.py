@@ -18,6 +18,9 @@ from PySpice.Unit import *                     # 导入单位系统：可直接�
 plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei']  # 设置中文字体，防止图中中文标签乱码
 plt.rcParams['axes.unicode_minus'] = False                       # 修复中文坐标系下负号显示为方块的问题
 
+# 【开关】是否生成/保存波形图：False=只打印数据摘要（运行后不留图）；True=生成 png 并弹窗查看
+SAVE_FIG = False
+
 # ---------------- 1. 电路参数（任务书规定①②电路参数自定） ----------------
 R = 1e3                                        # 电阻 R = 1 kΩ（单位：Ω），与电容串联起分压/限流作用
 C = 100e-9                                     # 电容 C = 100 nF（单位：F），储能元件决定充放电快慢
@@ -56,7 +59,7 @@ plt.title('任务① RC 低通滤波：方波瞬态响应（τ=RC=0.1ms）')    
 plt.legend(loc='lower right')                  # 显示图例
 plt.grid(alpha=0.3)                            # 加半透明网格便于读数
 plt.tight_layout()                             # 自动调整边距
-plt.savefig('task1_transient.png', dpi=150)    # 保存瞬态波形图为 png 文件
+if SAVE_FIG: plt.savefig('task1_transient.png', dpi=150)    # 【开关控制】SAVE_FIG=True 时才保存瞬态波形图为 png 文件
 
 # ---------------- 4. 交流小信号分析：扫频画波特图，测截止频率 fc ----------------
 # 【重要】交流小信号分析的物理约定：
@@ -94,7 +97,7 @@ ax2.set_xlabel('频率 f (Hz)')                  # 下子图 x 轴标签
 ax2.set_ylabel('相位 φ (°)')                   # 下子图 y 轴标签
 ax2.grid(alpha=0.3, which='both')              # 网格
 plt.tight_layout()                             # 调整布局
-plt.savefig('task1_bode.png', dpi=150)         # 保存波特图为 png 文件
+if SAVE_FIG: plt.savefig('task1_bode.png', dpi=150)         # 【开关控制】SAVE_FIG=True 时才保存波特图为 png 文件
 
 # ---------------- 5. 打印数据摘要：手算 vs 仿真 对比表 ----------------
 print('=' * 62)                                # 分隔线
@@ -112,4 +115,4 @@ print('增益@1kHz    %-12.4f      %-12.4f      %.2f%%' %                    # 1
 print('-' * 62)                                # 分隔线
 print('结论：输出幅度在 fc 以上按 -20dB/十倍频 滚降，符合一阶低通传递函数 H(jω)=1/(1+jωRC)')  # 结论
 
-plt.show()                                     # 弹出显示所有已保存的图窗口（脚本方式运行时可交互查看）
+if SAVE_FIG: plt.show()                                     # 【开关控制】SAVE_FIG=True 时才弹出图窗

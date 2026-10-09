@@ -21,6 +21,9 @@ from PySpice.Unit import *                     # 导入单位系统：直接用 
 plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei']  # 设置中文字体防止乱码
 plt.rcParams['axes.unicode_minus'] = False                       # 修复负号显示问题
 
+# 【开关】是否生成/保存波形图：False=只打印数据摘要（运行后不留图）；True=生成 png 并弹窗查看
+SAVE_FIG = False
+
 # ---------------- 1. 电路参数（任务书规定①②电路参数自定） ----------------
 V1 = 12.0                                      # 独立电压源 V1 = 12 V（网络内部的源）
 R1 = 4e3                                       # 电阻 R1 = 4 kΩ（源内串联回路电阻，单位：Ω）
@@ -98,7 +101,7 @@ plt.title('任务② 戴维南定理验证：手算 vs 仿真（R_th=R1∥R2，V
 plt.legend()                                   # 图例
 plt.grid(axis='y', alpha=0.3)                  # y 向网格便于读数
 plt.tight_layout()                             # 调整布局
-plt.savefig('task2_thevenin_compare.png', dpi=150)  # 保存对比图 png
+if SAVE_FIG: plt.savefig('task2_thevenin_compare.png', dpi=150)  # 【开关控制】SAVE_FIG=True 时才保存对比图 png
 
 # ---------------- 7. 打印数据摘要：手算 vs 仿真 对比表 ----------------
 print('=' * 66)                                # 分隔线
@@ -148,4 +151,4 @@ print('等效替换偏差（③ 相对 ②）：负载电压 %.6f%% ，负载电
 print('判据：偏差 ≈ 0 说明戴维南等效电路对外部负载而言与原网络完全等效（电压、电流双双成立）')  # 【新增】结论句（可直接抄进 README）
 print('=' * 78)                                # 【新增】分隔线
 
-plt.show()                                     # 弹出图窗（已先保存 png）
+if SAVE_FIG: plt.show()                                     # 【开关控制】SAVE_FIG=True 时才弹出图窗
