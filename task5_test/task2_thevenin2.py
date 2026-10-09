@@ -13,6 +13,7 @@
 # 运行输出：task2_thevenin_compare.png（手算 vs 仿真对比柱状图）+ 控制台数据摘要
 # =====================================================================
 
+import os                                     # 导入 os：用于拼接图片输出目录路径（保存到 images/）
 import numpy as np                             # 导入 numpy：用于数值计算（柱状图数据整理）
 import matplotlib.pyplot as plt                # 导入 matplotlib：绘图库，用于画对比柱状图
 from PySpice.Spice.Netlist import Circuit      # 导入 Circuit 类：搭建 SPICE 网表
@@ -21,8 +22,12 @@ from PySpice.Unit import *                     # 导入单位系统：直接用 
 plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei']  # 设置中文字体防止乱码
 plt.rcParams['axes.unicode_minus'] = False                       # 修复负号显示问题
 
-# 【开关】是否生成/保存波形图：False=只打印数据摘要（运行后不留图）；True=生成 png 并弹窗查看
+# 【开关1】是否保存图片文件到 images/：True=存图；False=不落盘（只弹窗/打印）
 SAVE_FIG = False
+# 【开关2】是否弹出图窗查看：True=弹窗；False=不弹（后台运行/只看控制台数字）
+SHOW_FIG = True
+# 图片统一输出到仓库的 images/ 目录（基于脚本自身位置定位，无论从哪个目录运行都不会乱放）
+IMAGES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'images')
 
 # ---------------- 1. 电路参数（任务书规定①②电路参数自定） ----------------
 V1 = 12.0                                      # 独立电压源 V1 = 12 V（网络内部的源）
@@ -101,7 +106,7 @@ plt.title('任务② 戴维南定理验证：手算 vs 仿真（R_th=R1∥R2，V
 plt.legend()                                   # 图例
 plt.grid(axis='y', alpha=0.3)                  # y 向网格便于读数
 plt.tight_layout()                             # 调整布局
-if SAVE_FIG: plt.savefig('task2_thevenin_compare.png', dpi=150)  # 【开关控制】SAVE_FIG=True 时才保存对比图 png
+if SAVE_FIG: plt.savefig(os.path.join(IMAGES_DIR, 'task2_thevenin_compare.png'), dpi=150)  # 【开关控制】SAVE_FIG=True 时才保存对比图 png
 
 # ---------------- 7. 打印数据摘要：手算 vs 仿真 对比表 ----------------
 print('=' * 66)                                # 分隔线
@@ -151,4 +156,4 @@ print('等效替换偏差（③ 相对 ②）：负载电压 %.6f%% ，负载电
 print('判据：偏差 ≈ 0 说明戴维南等效电路对外部负载而言与原网络完全等效（电压、电流双双成立）')  # 【新增】结论句（可直接抄进 README）
 print('=' * 78)                                # 【新增】分隔线
 
-if SAVE_FIG: plt.show()                                     # 【开关控制】SAVE_FIG=True 时才弹出图窗
+if SHOW_FIG: plt.show()  # 【开关控制】SHOW_FIG=True 时弹出图窗查看

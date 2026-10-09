@@ -10,6 +10,7 @@
 # 运行输出：task1_transient.png（方波瞬态波形）、task1_bode.png（波特图）、控制台数据摘要
 # =====================================================================
 
+import os                                     # 导入 os：用于拼接图片输出目录路径（保存到 images/）
 import numpy as np                          # 数值计算库，用于数组运算、对数与插值
 import matplotlib.pyplot as plt                # 导入 matplotlib：绘图库，用于画波形图和波特图
 from PySpice.Spice.Netlist import Circuit      # 导入 Circuit 类：用 Python 搭建 SPICE 网表（即"连电路"）
@@ -18,8 +19,12 @@ from PySpice.Unit import *                     # 导入单位系统：可直接�
 plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei']  # 设置中文字体，防止图中中文标签乱码
 plt.rcParams['axes.unicode_minus'] = False                       # 修复中文坐标系下负号显示为方块的问题
 
-# 【开关】是否生成/保存波形图：False=只打印数据摘要（运行后不留图）；True=生成 png 并弹窗查看
+# 【开关1】是否保存图片文件到 images/：True=存图；False=不落盘（只弹窗/打印）
 SAVE_FIG = False
+# 【开关2】是否弹出图窗查看：True=弹窗；False=不弹（后台运行/只看控制台数字）
+SHOW_FIG = True
+# 图片统一输出到仓库的 images/ 目录（基于脚本自身位置定位，无论从哪个目录运行都不会乱放）
+IMAGES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'images')
 
 # ---------------- 1. 电路参数（任务书规定①②电路参数自定） ----------------
 R = 1e3                                        # 电阻 R = 1 kΩ（单位：Ω），与电容串联起分压/限流作用
@@ -59,7 +64,7 @@ plt.title('任务① RC 低通滤波：方波瞬态响应（τ=RC=0.1ms）')    
 plt.legend(loc='lower right')                  # 显示图例
 plt.grid(alpha=0.3)                            # 加半透明网格便于读数
 plt.tight_layout()                             # 自动调整边距
-if SAVE_FIG: plt.savefig('task1_transient.png', dpi=150)    # 【开关控制】SAVE_FIG=True 时才保存瞬态波形图为 png 文件
+if SAVE_FIG: plt.savefig(os.path.join(IMAGES_DIR, 'task1_transient.png'), dpi=150)    # 【开关控制】SAVE_FIG=True 时才保存瞬态波形图为 png 文件
 
 # ---------------- 4. 交流小信号分析：扫频画波特图，测截止频率 fc ----------------
 # 【重要】交流小信号分析的物理约定：
@@ -97,7 +102,7 @@ ax2.set_xlabel('频率 f (Hz)')                  # 下子图 x 轴标签
 ax2.set_ylabel('相位 φ (°)')                   # 下子图 y 轴标签
 ax2.grid(alpha=0.3, which='both')              # 网格
 plt.tight_layout()                             # 调整布局
-if SAVE_FIG: plt.savefig('task1_bode.png', dpi=150)         # 【开关控制】SAVE_FIG=True 时才保存波特图为 png 文件
+if SAVE_FIG: plt.savefig(os.path.join(IMAGES_DIR, 'task1_bode.png'), dpi=150)         # 【开关控制】SAVE_FIG=True 时才保存波特图为 png 文件
 
 # ---------------- 5. 打印数据摘要：手算 vs 仿真 对比表 ----------------
 print('=' * 62)                                # 分隔线
@@ -115,4 +120,4 @@ print('增益@1kHz    %-12.4f      %-12.4f      %.2f%%' %                    # 1
 print('-' * 62)                                # 分隔线
 print('结论：输出幅度在 fc 以上按 -20dB/十倍频 滚降，符合一阶低通传递函数 H(jω)=1/(1+jωRC)')  # 结论
 
-if SAVE_FIG: plt.show()                                     # 【开关控制】SAVE_FIG=True 时才弹出图窗
+if SHOW_FIG: plt.show()  # 【开关控制】SHOW_FIG=True 时弹出图窗查看
