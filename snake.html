@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <title>贪吃蛇 · 科技版 + 智能AI + 主题切换</title>
+<html lang="zh-CN" data-page-node-id="70dRRnElh2oE0P7AMBI5uT">
+<head data-page-node-id="vX9zHrmS9uaoVZ2D11uHjZ">
+    <meta charset="UTF-8" data-page-node-id="jBgfqiVEX7IYoGa0uhBqSt" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" data-page-node-id="mxCoCuL5XBBJ66GOfucmsI" />
+    <title>贪吃蛇 · 科技版 + 主题切换</title>
     <style>
         :root {
             --bg-gradient: radial-gradient(ellipse at 50% 30%, #0f1a3a, #080c1a);
@@ -13,10 +13,6 @@
             --score-color: #00f0ff;
             --btn-restart-bg: linear-gradient(135deg, #00f0ff, #00d4a0);
             --btn-restart-text: #0a0e27;
-            --btn-ai-bg: linear-gradient(135deg, #f0a500, #ff7b2c);
-            --btn-ai-text: #0a0e27;
-            --btn-ai-active-bg: linear-gradient(135deg, #ff4d6d, #d62828);
-            --btn-ai-active-text: #fff;
             --canvas-bg: #0b1028;
             --grid-line: rgba(0, 240, 255, 0.07);
             --grid-dot: rgba(0, 240, 255, 0.10);
@@ -33,10 +29,6 @@
             --score-color: #0077cc;
             --btn-restart-bg: linear-gradient(135deg, #00a8cc, #00b894);
             --btn-restart-text: #ffffff;
-            --btn-ai-bg: linear-gradient(135deg, #ffb347, #ff7e5f);
-            --btn-ai-text: #ffffff;
-            --btn-ai-active-bg: linear-gradient(135deg, #ff5e6c, #d63031);
-            --btn-ai-active-text: #ffffff;
             --canvas-bg: #f8fafc;
             --grid-line: rgba(0, 100, 150, 0.08);
             --grid-dot: rgba(0, 100, 150, 0.10);
@@ -220,23 +212,6 @@
             box-shadow: 0 8px 36px rgba(0, 240, 255, 0.35);
         }
 
-        #aiBtn {
-            color: var(--btn-ai-text);
-            background: var(--btn-ai-bg);
-        }
-        #aiBtn:hover {
-            transform: translateY(-2px) scale(1.02);
-            box-shadow: 0 8px 36px rgba(240, 165, 0, 0.35);
-        }
-        #aiBtn.active {
-            background: var(--btn-ai-active-bg);
-            color: var(--btn-ai-active-text);
-            box-shadow: 0 0 30px rgba(255, 77, 109, 0.4);
-        }
-        #aiBtn.active:hover {
-            box-shadow: 0 8px 40px rgba(255, 77, 109, 0.5);
-        }
-
         .touch-controls {
             display: none;
             margin-top: 16px;
@@ -334,331 +309,48 @@
         }
     </style>
 </head>
-<body data-theme="dark">
-    <div class="game-container">
-        <div class="header">
-            <div class="title">
-                <span class="title-icon">◈</span>
+<body data-theme="dark" data-page-node-id="Z9YWW80gTxNWBEOdBr8gNG">
+    <div class="game-container" data-page-node-id="N696YiW7A2Mk6Xf3PMWiuX">
+        <div class="header" data-page-node-id="YUysRWNFyuGCAfXqizd3As">
+            <div class="title" data-page-node-id="3sueQXf0Y4yculMnbAXquq">
+                <span class="title-icon" data-page-node-id="487YxpJGqIK4PgXcUJocB8">◈</span>
                 贪吃蛇
             </div>
-            <div class="score-area">
-                <span class="score-label">得分</span>
-                <span class="score-value" id="scoreDisplay">0</span>
+            <div class="score-area" data-page-node-id="vOEuPQ65WRoLoARTJS0pBC">
+                <span class="score-label" data-page-node-id="WXl0w2B9AtfK9xNZWmpxS9">得分</span>
+                <span class="score-value" id="scoreDisplay" data-page-node-id="4ukA38zQtw0wkWEWUFOIeg">0</span>
             </div>
-            <button id="themeToggle" class="theme-btn" title="切换主题">🌓</button>
+            <button id="themeToggle" class="theme-btn" title="切换主题" data-page-node-id="m1lKhAzbeY18nE0PoShWK8">🌓</button>
         </div>
 
-        <div class="canvas-wrapper">
-            <canvas id="gameCanvas" width="500" height="500"></canvas>
+        <div class="canvas-wrapper" data-page-node-id="TjRi6nlOsaQOcVA4XSrISW">
+            <canvas id="gameCanvas" width="500" height="500" data-page-node-id="ftilkU8dwCT54WbK94q5Gy"></canvas>
         </div>
 
-        <div class="touch-controls">
-            <button class="touch-btn" data-dir="up">▲</button>
-            <div class="touch-row">
-                <button class="touch-btn" data-dir="left">◀</button>
-                <button class="touch-btn" data-dir="down">▼</button>
-                <button class="touch-btn" data-dir="right">▶</button>
+        <div class="touch-controls" data-page-node-id="rKZM1Ri1mj8REE14tLFYfn">
+            <button class="touch-btn" data-dir="up" data-page-node-id="uZ2FSjuIOL1uiaBjbkAJfu">▲</button>
+            <div class="touch-row" data-page-node-id="Sj22brXCEojPCEOFsD6Uqq">
+                <button class="touch-btn" data-dir="left" data-page-node-id="50wJG6W2Qtduegw21leaZp">◀</button>
+                <button class="touch-btn" data-dir="down" data-page-node-id="pGwiaYpOMPhvm5AO9AbXRC">▼</button>
+                <button class="touch-btn" data-dir="right" data-page-node-id="4Mcbiv5b5OUPHzLdtBlP35">▶</button>
             </div>
         </div>
 
-        <div class="footer">
-            <button id="restartBtn" class="btn">⟳ 重新开始</button>
-            <button id="aiBtn" class="btn">🤖 AI自动玩</button>
+        <div class="footer" data-page-node-id="vFMyGAvekBkZJiJsUy0Wgp">
+            <button id="restartBtn" class="btn" data-page-node-id="mrUVEOAz4Ud29U6dXzEScm">⟳ 重新开始</button>
         </div>
     </div>
 
     <script>
         // ================================================================
-        //  AIController 类 —— 核心算法（完整版）
-        // ================================================================
-        class AIController {
-            constructor(game) {
-                this.game = game;
-                this.GRID_SIZE = game.GRID_SIZE;
-                this.DIRS = [
-                    { dx: 0, dy: -1 }, // 上
-                    { dx: 0, dy: 1 },  // 下
-                    { dx: -1, dy: 0 }, // 左
-                    { dx: 1, dy: 0 }   // 右
-                ];
-                this.lastLog = '';
-            }
-
-            getNextDirection() {
-                const snake = this.game.snake;
-                const head = snake[snake.length - 1];
-                const food = this.game.food;
-                if (!food) {
-                    this._log('等待食物生成');
-                    return null;
-                }
-
-                // 1. 尝试安全吃果路径
-                const foodPath = this._bfsToFood(head, food, snake);
-                if (foodPath && foodPath.length > 0) {
-                    const firstDir = foodPath[0];
-                    const nextHead = { x: head.x + firstDir.dx, y: head.y + firstDir.dy };
-                    const ateFood = (nextHead.x === food.x && nextHead.y === food.y);
-                    const simSnake = this._simulateStep(snake, nextHead, ateFood);
-                    if (this._canReachTail(simSnake)) {
-                        this._log('目标：安全吃果');
-                        return firstDir;
-                    }
-                    const altDir = this._findAlternativeToFood(head, food, snake, firstDir);
-                    if (altDir) {
-                        const altHead = { x: head.x + altDir.dx, y: head.y + altDir.dy };
-                        const altAte = (altHead.x === food.x && altHead.y === food.y);
-                        const altSimSnake = this._simulateStep(snake, altHead, altAte);
-                        if (this._canReachTail(altSimSnake)) {
-                            this._log('目标：安全吃果（绕路）');
-                            return altDir;
-                        }
-                    }
-                }
-
-                // 2. 追踪蛇尾
-                const tailDir = this._bfsToTail(head, snake);
-                if (tailDir) {
-                    this._log('目标：尾随保命');
-                    return tailDir;
-                }
-
-                // 3. 选择最大空间方向
-                const spaceDir = this._maxSpaceDirection(head, snake);
-                if (spaceDir) {
-                    this._log('目标：最大空间');
-                    return spaceDir;
-                }
-
-                this._log('无路可走');
-                return null;
-            }
-
-            _bfsToFood(head, food, snake) {
-                const size = this.GRID_SIZE;
-                const startKey = `${head.x},${head.y}`;
-                const queue = [];
-                const visited = new Set();
-                visited.add(startKey);
-                queue.push({
-                    head: { x: head.x, y: head.y },
-                    snake: snake.map(s => ({ x: s.x, y: s.y })),
-                    path: []
-                });
-
-                while (queue.length > 0) {
-                    const cur = queue.shift();
-                    if (cur.head.x === food.x && cur.head.y === food.y) {
-                        return cur.path;
-                    }
-
-                    for (const d of this.DIRS) {
-                        const nh = { x: cur.head.x + d.dx, y: cur.head.y + d.dy };
-                        if (nh.x < 0 || nh.x >= size || nh.y < 0 || nh.y >= size) continue;
-
-                        const ate = (nh.x === food.x && nh.y === food.y);
-                        const ns = [...cur.snake];
-                        ns.push(nh);
-                        if (!ate) ns.shift();
-
-                        let collision = false;
-                        for (let i = 0; i < ns.length - 1; i++) {
-                            if (ns[i].x === nh.x && ns[i].y === nh.y) {
-                                collision = true;
-                                break;
-                            }
-                        }
-                        if (collision) continue;
-
-                        const key = `${nh.x},${nh.y}`;
-                        if (visited.has(key)) continue;
-                        visited.add(key);
-                        queue.push({
-                            head: nh,
-                            snake: ns,
-                            path: [...cur.path, d]
-                        });
-                    }
-                }
-                return null;
-            }
-
-            _findAlternativeToFood(head, food, snake, excludedDir) {
-                const size = this.GRID_SIZE;
-                for (const d of this.DIRS) {
-                    if (d.dx === excludedDir.dx && d.dy === excludedDir.dy) continue;
-                    const nh = { x: head.x + d.dx, y: head.y + d.dy };
-                    if (nh.x < 0 || nh.x >= size || nh.y < 0 || nh.y >= size) continue;
-                    if (!this._isSafeSimple(nh, snake, false)) continue;
-                    const subSnake = this._simulateStep(snake, nh, (nh.x === food.x && nh.y === food.y));
-                    const subPath = this._bfsToFood(nh, food, subSnake);
-                    if (subPath && subPath.length > 0) {
-                        const simSnake = this._simulateStep(snake, nh, (nh.x === food.x && nh.y === food.y));
-                        if (this._canReachTail(simSnake)) {
-                            return d;
-                        }
-                    }
-                }
-                return null;
-            }
-
-            _bfsToTail(head, snake) {
-                const size = this.GRID_SIZE;
-                const tail = snake[0];
-                if (head.x === tail.x && head.y === tail.y) return null;
-
-                const snakeSet = new Set();
-                for (let i = 1; i < snake.length; i++) {
-                    snakeSet.add(`${snake[i].x},${snake[i].y}`);
-                }
-                const tailKey = `${tail.x},${tail.y}`;
-
-                const visited = new Set();
-                const queue = [];
-                visited.add(`${head.x},${head.y}`);
-                queue.push({ x: head.x, y: head.y, dx: 0, dy: 0 });
-
-                while (queue.length > 0) {
-                    const cur = queue.shift();
-                    if (cur.x === tail.x && cur.y === tail.y) {
-                        if (cur.dx === 0 && cur.dy === 0) return null;
-                        return { dx: cur.dx, dy: cur.dy };
-                    }
-
-                    for (const d of this.DIRS) {
-                        const nx = cur.x + d.dx;
-                        const ny = cur.y + d.dy;
-                        const key = `${nx},${ny}`;
-                        if (nx < 0 || nx >= size || ny < 0 || ny >= size) continue;
-                        if (visited.has(key)) continue;
-                        if (snakeSet.has(key) && key !== tailKey) continue;
-                        visited.add(key);
-                        const firstDx = (cur.dx === 0 && cur.dy === 0) ? d.dx : cur.dx;
-                        const firstDy = (cur.dx === 0 && cur.dy === 0) ? d.dy : cur.dy;
-                        queue.push({ x: nx, y: ny, dx: firstDx, dy: firstDy });
-                    }
-                }
-                return null;
-            }
-
-            _canReachTail(snake) {
-                const head = snake[snake.length - 1];
-                const tail = snake[0];
-                if (head.x === tail.x && head.y === tail.y) return true;
-
-                const size = this.GRID_SIZE;
-                const snakeSet = new Set();
-                for (let i = 1; i < snake.length; i++) {
-                    snakeSet.add(`${snake[i].x},${snake[i].y}`);
-                }
-                const tailKey = `${tail.x},${tail.y}`;
-
-                const visited = new Set();
-                const queue = [];
-                visited.add(`${head.x},${head.y}`);
-                queue.push({ x: head.x, y: head.y });
-
-                while (queue.length > 0) {
-                    const cur = queue.shift();
-                    if (cur.x === tail.x && cur.y === tail.y) return true;
-
-                    for (const d of this.DIRS) {
-                        const nx = cur.x + d.dx;
-                        const ny = cur.y + d.dy;
-                        const key = `${nx},${ny}`;
-                        if (nx < 0 || nx >= size || ny < 0 || ny >= size) continue;
-                        if (visited.has(key)) continue;
-                        if (snakeSet.has(key) && key !== tailKey) continue;
-                        visited.add(key);
-                        queue.push({ x: nx, y: ny });
-                    }
-                }
-                return false;
-            }
-
-            _simulateStep(snake, newHead, ateFood) {
-                const ns = snake.map(s => ({ x: s.x, y: s.y }));
-                ns.push(newHead);
-                if (!ateFood) ns.shift();
-                return ns;
-            }
-
-            _isSafeSimple(newHead, snake, willEat = false) {
-                const size = this.GRID_SIZE;
-                if (newHead.x < 0 || newHead.x >= size || newHead.y < 0 || newHead.y >= size) return false;
-                const limit = willEat ? snake.length : snake.length - 1;
-                for (let i = 0; i < limit; i++) {
-                    if (snake[i].x === newHead.x && snake[i].y === newHead.y) return false;
-                }
-                return true;
-            }
-
-            _maxSpaceDirection(head, snake) {
-                let bestSpace = -1;
-                let bestDir = null;
-                for (const d of this.DIRS) {
-                    const nh = { x: head.x + d.dx, y: head.y + d.dy };
-                    if (!this._isSafeSimple(nh, snake, false)) continue;
-                    const simSnake = this._simulateStep(snake, nh, false);
-                    const space = this._countReachable(nh, simSnake);
-                    if (space > bestSpace) {
-                        bestSpace = space;
-                        bestDir = d;
-                    }
-                }
-                return bestDir;
-            }
-
-            _countReachable(start, snakeBody) {
-                const size = this.GRID_SIZE;
-                const snakeSet = new Set();
-                for (let i = 0; i < snakeBody.length - 1; i++) {
-                    snakeSet.add(`${snakeBody[i].x},${snakeBody[i].y}`);
-                }
-                const tailKey = `${snakeBody[0].x},${snakeBody[0].y}`;
-
-                const visited = new Set();
-                const queue = [];
-                visited.add(`${start.x},${start.y}`);
-                queue.push({ x: start.x, y: start.y });
-                let count = 0;
-
-                while (queue.length > 0) {
-                    const cur = queue.shift();
-                    count++;
-                    for (const d of this.DIRS) {
-                        const nx = cur.x + d.dx;
-                        const ny = cur.y + d.dy;
-                        const key = `${nx},${ny}`;
-                        if (nx < 0 || nx >= size || ny < 0 || ny >= size) continue;
-                        if (visited.has(key)) continue;
-                        if (snakeSet.has(key) && key !== tailKey) continue;
-                        visited.add(key);
-                        queue.push({ x: nx, y: ny });
-                    }
-                }
-                return count;
-            }
-
-            _log(msg) {
-                if (this.lastLog !== msg) {
-                    console.log(`[AI] ${msg}`);
-                    this.lastLog = msg;
-                }
-            }
-        }
-
-
-        // ================================================================
         //  Game 类（加入主题管理）
         // ================================================================
         class Game {
-            constructor(canvasId, scoreId, restartBtnId, aiBtnId) {
+            constructor(canvasId, scoreId, restartBtnId) {
                 this.canvas = document.getElementById(canvasId);
                 this.ctx = this.canvas.getContext('2d');
                 this.scoreSpan = document.getElementById(scoreId);
                 this.restartBtn = document.getElementById(restartBtnId);
-                this.aiBtn = document.getElementById(aiBtnId);
                 this.themeToggleBtn = document.getElementById('themeToggle');
 
                 this.GRID_SIZE = 20;
@@ -673,9 +365,6 @@
                 this.score = 0;
                 this.gameOver = false;
                 this.isRunning = false;
-
-                this.aiActive = false;
-                this.aiController = new AIController(this);
 
                 this.loopTimer = null;
                 this.INTERVAL_MS = 145;
@@ -693,28 +382,7 @@
                 this.nextDirection = { dx, dy };
             }
 
-            toggleAI() {
-                if (this.gameOver) {
-                    alert('游戏已结束，请先点击「重新开始」');
-                    return;
-                }
-                this.aiActive = !this.aiActive;
-                this._updateAIButton();
-            }
-
-            _updateAIButton() {
-                if (this.aiActive) {
-                    this.aiBtn.textContent = '⏹ 停止AI';
-                    this.aiBtn.classList.add('active');
-                } else {
-                    this.aiBtn.textContent = '🤖 AI自动玩';
-                    this.aiBtn.classList.remove('active');
-                }
-            }
-
             reset() {
-                this.aiActive = false;
-                this._updateAIButton();
                 this._stopLoop();
 
                 this.gameOver = false;
@@ -755,17 +423,8 @@
             }
 
             _update() {
-                if (this.aiActive && !this.gameOver) {
-                    const aiDir = this.aiController.getNextDirection();
-                    if (aiDir) this.forceDirection(aiDir.dx, aiDir.dy);
-                }
-
-                if (this.aiActive) {
+                if (!this._isOpposite(this.nextDirection, this.direction)) {
                     this.direction = { ...this.nextDirection };
-                } else {
-                    if (!this._isOpposite(this.nextDirection, this.direction)) {
-                        this.direction = { ...this.nextDirection };
-                    }
                 }
 
                 const head = this.snake[this.snake.length - 1];
@@ -996,10 +655,6 @@
                 this.gameOver = true;
                 this.isRunning = false;
                 this._stopLoop();
-                if (this.aiActive) {
-                    this.aiActive = false;
-                    this._updateAIButton();
-                }
                 this.draw();
                 setTimeout(() => {
                     alert(`💀 游戏结束！\n\n最终得分：${this.score}`);
@@ -1036,7 +691,6 @@
                     const key = e.key;
                     if (key.startsWith('Arrow')) e.preventDefault();
                     if (this.gameOver) return;
-                    if (this.aiActive) return;
 
                     let newDx = 0, newDy = 0;
                     switch (key) {
@@ -1052,7 +706,7 @@
                 document.querySelectorAll('.touch-btn').forEach(btn => {
                     const handle = (e) => {
                         e.preventDefault();
-                        if (this.gameOver || this.aiActive) return;
+                        if (this.gameOver) return;
                         const dir = btn.dataset.dir;
                         let newDx = 0, newDy = 0;
                         switch (dir) {
@@ -1068,7 +722,6 @@
                 });
 
                 this.restartBtn.addEventListener('click', () => this.reset());
-                this.aiBtn.addEventListener('click', () => this.toggleAI());
                 this.themeToggleBtn.addEventListener('click', () => this.toggleTheme());
 
                 window.addEventListener('keydown', (e) => {
@@ -1081,7 +734,7 @@
         //  启动
         // ================================================================
         document.addEventListener('DOMContentLoaded', () => {
-            const game = new Game('gameCanvas', 'scoreDisplay', 'restartBtn', 'aiBtn');
+            const game = new Game('gameCanvas', 'scoreDisplay', 'restartBtn');
             window.__game = game;
         });
     </script>
